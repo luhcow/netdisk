@@ -153,6 +153,30 @@ httpd.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/httpd.c.s
 .PHONY : httpd.c.s
 
+liburl/urlcode.o: liburl/urlcode.c.o
+.PHONY : liburl/urlcode.o
+
+# target to build an object file
+liburl/urlcode.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/liburl/urlcode.c.o
+.PHONY : liburl/urlcode.c.o
+
+liburl/urlcode.i: liburl/urlcode.c.i
+.PHONY : liburl/urlcode.i
+
+# target to preprocess a source file
+liburl/urlcode.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/liburl/urlcode.c.i
+.PHONY : liburl/urlcode.c.i
+
+liburl/urlcode.s: liburl/urlcode.c.s
+.PHONY : liburl/urlcode.s
+
+# target to generate assembly for a file
+liburl/urlcode.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/liburl/urlcode.c.s
+.PHONY : liburl/urlcode.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -165,6 +189,9 @@ help:
 	@echo "... httpd.o"
 	@echo "... httpd.i"
 	@echo "... httpd.s"
+	@echo "... liburl/urlcode.o"
+	@echo "... liburl/urlcode.i"
+	@echo "... liburl/urlcode.s"
 .PHONY : help
 
 

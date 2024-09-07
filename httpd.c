@@ -25,6 +25,7 @@
 #include <pthread.h>
 #include <sys/wait.h>
 #include <stdlib.h>
+#include <urlcode.h>
 
 #define ISspace(x) isspace((int)(x))
 
@@ -93,7 +94,7 @@ void accept_request(int client)
         i++; j++;
     }
     url[i] = '\0';
-
+    urldecode(url);//解码 url
     /*处理 GET 方法*/
     if (strcasecmp(method, "GET") == 0)
     {
@@ -113,25 +114,20 @@ void accept_request(int client)
 
     /*格式化 url 到 path 数组，html 文件都在 htdocs 中*/
     sprintf(path, "htdocs%s", url);
-    /*默认情况为 index.html */
+    /*默认情况为 index.html-->为路径交付cgi */
     if (path[strlen(path) - 1] == '/')
     {
         cgi = 1;
-        strcat(path, "index.html");
+        //strcat(path, "index.html");
     }
+
     /*根据路径找到对应文件 */
-    if (stat(path, &st) == -1)
+    if (stat(path, &st) == -1 || (strstr(path, "htdocs/download/") - path != 0))
     {
         /*把所有 headers 的信息都丢弃*/
         while ((numchars > 0) && strcmp("\n", buf))  /* read & discard headers */
             numchars = get_line(client, buf, sizeof(buf));
         /*回应客户端找不到*/
-        not_found(client);
-    }
-    else if (strstr(path, "htdocs/download/") - path != 0)
-    {
-        /*回应客户端文件不存在*/
-
         not_found(client);
     }
     else
@@ -307,6 +303,7 @@ void execute_cgi(int client, const char* path, const char* method, const char* q
         char meth_env[255];
         char query_env[255];
         char length_env[255];
+        char path_env[255];
 
         /* 把 STDOUT 重定向到 cgi_output 的写入端 */
         dup2(cgi_output[1], 1);
@@ -317,7 +314,9 @@ void execute_cgi(int client, const char* path, const char* method, const char* q
         close(cgi_input[1]);
         /*设置 request_method 的环境变量*/
         sprintf(meth_env, "REQUEST_METHOD=%s", method);
+        sprintf(path_env, "URL_PATH=%s", path);
         putenv(meth_env);
+        putenv(path_env);
         //putenv(path);
         if (strcasecmp(method, "GET") == 0)
         {
@@ -333,7 +332,10 @@ void execute_cgi(int client, const char* path, const char* method, const char* q
         }
         /*用 execl 运行 cgi 程序*/
         //总是运行根目录下的cgi程序
-        execl("./htdocs/path", path, NULL);
+        if (strcasecmp(method, "GET") == 0)
+            execl("./htdocs/path", path, NULL);
+        else
+            execl("./htdocs/co.cgi", path, NULL);
         exit(0);
     }
     else
