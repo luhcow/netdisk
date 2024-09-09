@@ -153,6 +153,30 @@ httpd.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/httpd.c.s
 .PHONY : httpd.c.s
 
+liburl/liburl.o: liburl/liburl.c.o
+.PHONY : liburl/liburl.o
+
+# target to build an object file
+liburl/liburl.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/liburl/liburl.c.o
+.PHONY : liburl/liburl.c.o
+
+liburl/liburl.i: liburl/liburl.c.i
+.PHONY : liburl/liburl.i
+
+# target to preprocess a source file
+liburl/liburl.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/liburl/liburl.c.i
+.PHONY : liburl/liburl.c.i
+
+liburl/liburl.s: liburl/liburl.c.s
+.PHONY : liburl/liburl.s
+
+# target to generate assembly for a file
+liburl/liburl.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/liburl/liburl.c.s
+.PHONY : liburl/liburl.c.s
+
 liburl/urlcode.o: liburl/urlcode.c.o
 .PHONY : liburl/urlcode.o
 
@@ -189,6 +213,9 @@ help:
 	@echo "... httpd.o"
 	@echo "... httpd.i"
 	@echo "... httpd.s"
+	@echo "... liburl/liburl.o"
+	@echo "... liburl/liburl.i"
+	@echo "... liburl/liburl.s"
 	@echo "... liburl/urlcode.o"
 	@echo "... liburl/urlcode.i"
 	@echo "... liburl/urlcode.s"

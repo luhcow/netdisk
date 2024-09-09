@@ -94,7 +94,9 @@ void accept_request(int client)
         i++; j++;
     }
     url[i] = '\0';
+
     urldecode(url);//解码 url
+
     /*处理 GET 方法*/
     if (strcasecmp(method, "GET") == 0)
     {
@@ -122,7 +124,7 @@ void accept_request(int client)
     }
 
     /*根据路径找到对应文件 */
-    if (stat(path, &st) == -1 || (strstr(path, "htdocs/download/") - path != 0))
+    if (stat(path, &st) == -1 && strcasecmp(method, "POST") != 0)
     {
         /*把所有 headers 的信息都丢弃*/
         while ((numchars > 0) && strcmp("\n", buf))  /* read & discard headers */
@@ -133,12 +135,18 @@ void accept_request(int client)
     else
     {
         /*如果是个目录，则默认使用该目录下 index.html 文件-->交付CGI处理*/
-        if ((st.st_mode & S_IFMT) == S_IFDIR)
-            //strcat(path, "/index.html");
+        if (S_ISDIR(st.st_mode))  // 判断是否为目录
+        {
+            cgi = 1;  // 目录交给 CGI 处理
+        }
+        else if (!cgi && !S_ISDIR(st.st_mode))
+        {
+            cgi = 0;
+        }
+        else if (strcasecmp(method, "POST") == 0)
+        {
             cgi = 1;
-        if ((st.st_mode & S_IXUSR) || (st.st_mode & S_IXGRP) || (st.st_mode & S_IXOTH))
-            cgi = 1;
-        /*不是 cgi,直接把服务器文件返回，否则执行 cgi */
+        }
         if (!cgi)
             serve_file(client, path);
         else
@@ -189,10 +197,12 @@ void cat(int client, FILE* resource)
     // {
     //     send(client, buf, bytes_read, 0);
     // }
+    int n = 0;
     char buffer[1024];
     size_t bytes_read;
     while ((bytes_read = fread(buffer, 1, sizeof(buffer), resource)) > 0)
     {
+        n++;
         send(client, buffer, bytes_read, 0);
     }
 }
@@ -262,7 +272,7 @@ void execute_cgi(int client, const char* path, const char* method, const char* q
             /* HTTP 请求的特点*/
             if (strcasecmp(buf, "Content-Length:") == 0)
                 content_length = atoi(&(buf[16]));
-            numchars = get_line(client, buf, sizeof(buf));
+            numchars = get_line(client, buf, sizeof(buf));//在这里把头读取完都丢弃了
         }
         /*没有找到 content_length */
         if (content_length == -1)
@@ -335,7 +345,7 @@ void execute_cgi(int client, const char* path, const char* method, const char* q
         if (strcasecmp(method, "GET") == 0)
             execl("./htdocs/path", path, NULL);
         else
-            execl("./htdocs/co.cgi", path, NULL);
+            execl("./htdocs/upload", path, NULL);
         exit(0);
     }
     else
@@ -473,16 +483,20 @@ void not_found(int client)
     send(client, buf, strlen(buf), 0);
     sprintf(buf, "\r\n");
     send(client, buf, strlen(buf), 0);
-    sprintf(buf, "<HTML><TITLE>Not Found</TITLE>\r\n");
-    send(client, buf, strlen(buf), 0);
-    sprintf(buf, "<BODY><P>The server could not fulfill\r\n");
-    send(client, buf, strlen(buf), 0);
-    sprintf(buf, "your request because the resource specified\r\n");
-    send(client, buf, strlen(buf), 0);
-    sprintf(buf, "is unavailable or nonexistent.\r\n");
-    send(client, buf, strlen(buf), 0);
-    sprintf(buf, "</BODY></HTML>\r\n");
-    send(client, buf, strlen(buf), 0);
+
+    FILE* not_found_html = fopen("./htdocs/404.html", "r");
+    cat(client, not_found_html);
+    fclose(not_found_html);
+    // sprintf(buf, "<HTML><TITLE>Not Found</TITLE>\r\n");
+    // send(client, buf, strlen(buf), 0);
+    // sprintf(buf, "<BODY><P>The server could not fulfill\r\n");
+    // send(client, buf, strlen(buf), 0);
+    // sprintf(buf, "your request because the resource specified\r\n");
+    // send(client, buf, strlen(buf), 0);
+    // sprintf(buf, "is unavailable or nonexistent.\r\n");
+    // send(client, buf, strlen(buf), 0);
+    // sprintf(buf, "</BODY></HTML>\r\n");
+    // send(client, buf, strlen(buf), 0);
 }
 
 void not_found_debug(int client, char* path)

@@ -129,6 +129,19 @@ path/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/path.dir/build.make CMakeFiles/path.dir/build
 .PHONY : path/fast
 
+#=============================================================================
+# Target rules for targets named upload
+
+# Build rule for target.
+upload: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 upload
+.PHONY : upload
+
+# fast build rule for target.
+upload/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/upload.dir/build.make CMakeFiles/upload.dir/build
+.PHONY : upload/fast
+
 path_html.o: path_html.c.o
 .PHONY : path_html.o
 
@@ -153,6 +166,30 @@ path_html.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/path.dir/build.make CMakeFiles/path.dir/path_html.c.s
 .PHONY : path_html.c.s
 
+upload.o: upload.c.o
+.PHONY : upload.o
+
+# target to build an object file
+upload.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/upload.dir/build.make CMakeFiles/upload.dir/upload.c.o
+.PHONY : upload.c.o
+
+upload.i: upload.c.i
+.PHONY : upload.i
+
+# target to preprocess a source file
+upload.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/upload.dir/build.make CMakeFiles/upload.dir/upload.c.i
+.PHONY : upload.c.i
+
+upload.s: upload.c.s
+.PHONY : upload.s
+
+# target to generate assembly for a file
+upload.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/upload.dir/build.make CMakeFiles/upload.dir/upload.c.s
+.PHONY : upload.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -162,9 +199,13 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... path"
+	@echo "... upload"
 	@echo "... path_html.o"
 	@echo "... path_html.i"
 	@echo "... path_html.s"
+	@echo "... upload.o"
+	@echo "... upload.i"
+	@echo "... upload.s"
 .PHONY : help
 
 

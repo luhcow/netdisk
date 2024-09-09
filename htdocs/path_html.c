@@ -52,9 +52,9 @@ void list_directory(const char* dir_path)
     }
     printf("</ul>\n");
 
-    printf("<form action=\"co.cgi\" method=\"post\" enctype=\"multipart / form - data\">\n");
-    printf("<span class=\"form - line\">文件(file): <input type=\"file\" id=\"file\" name=\"file\" /></span>\n");
-    printf("<input type=\"submit\" name=\"submit\" value=\"upload\" />\n");
+    printf("<form action=\"upload\" method=\"post\" enctype=\"multipart/form-data\">\n");
+    printf("<span class=\"form-line\">\n文件(file): \n<input type=\"file\" id=\"file\" name=\"file\">\n</span>\n");
+    printf("<input type=\"submit\" name=\"submit\" value=\"upload\">\n</form>\n");
 
     closedir(dp);
 }
