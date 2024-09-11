@@ -201,6 +201,19 @@ hash/fast:
 .PHONY : hash/fast
 
 #=============================================================================
+# Target rules for targets named me
+
+# Build rule for target.
+me: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 me
+.PHONY : me
+
+# fast build rule for target.
+me/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/me.dir/build.make CMakeFiles/me.dir/build
+.PHONY : me/fast
+
+#=============================================================================
 # Target rules for targets named l8w8jwt
 
 # Build rule for target.
@@ -304,54 +317,6 @@ lib/fast:
 	$(MAKE) $(MAKESILENT) -f lib/l8w8jwt/mbedtls/library/CMakeFiles/lib.dir/build.make lib/l8w8jwt/mbedtls/library/CMakeFiles/lib.dir/build
 .PHONY : lib/fast
 
-api/auth/login/hash.o: api/auth/login/hash.c.o
-.PHONY : api/auth/login/hash.o
-
-# target to build an object file
-api/auth/login/hash.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hash.dir/build.make CMakeFiles/hash.dir/api/auth/login/hash.c.o
-.PHONY : api/auth/login/hash.c.o
-
-api/auth/login/hash.i: api/auth/login/hash.c.i
-.PHONY : api/auth/login/hash.i
-
-# target to preprocess a source file
-api/auth/login/hash.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hash.dir/build.make CMakeFiles/hash.dir/api/auth/login/hash.c.i
-.PHONY : api/auth/login/hash.c.i
-
-api/auth/login/hash.s: api/auth/login/hash.c.s
-.PHONY : api/auth/login/hash.s
-
-# target to generate assembly for a file
-api/auth/login/hash.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hash.dir/build.make CMakeFiles/hash.dir/api/auth/login/hash.c.s
-.PHONY : api/auth/login/hash.c.s
-
-api/public/settings.o: api/public/settings.c.o
-.PHONY : api/public/settings.o
-
-# target to build an object file
-api/public/settings.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/settings.dir/build.make CMakeFiles/settings.dir/api/public/settings.c.o
-.PHONY : api/public/settings.c.o
-
-api/public/settings.i: api/public/settings.c.i
-.PHONY : api/public/settings.i
-
-# target to preprocess a source file
-api/public/settings.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/settings.dir/build.make CMakeFiles/settings.dir/api/public/settings.c.i
-.PHONY : api/public/settings.c.i
-
-api/public/settings.s: api/public/settings.c.s
-.PHONY : api/public/settings.s
-
-# target to generate assembly for a file
-api/public/settings.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/settings.dir/build.make CMakeFiles/settings.dir/api/public/settings.c.s
-.PHONY : api/public/settings.c.s
-
 httpd.o: httpd.c.o
 .PHONY : httpd.o
 
@@ -376,29 +341,101 @@ httpd.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/httpd.c.s
 .PHONY : httpd.c.s
 
-liburl/urlcode.o: liburl/urlcode.c.o
-.PHONY : liburl/urlcode.o
+lib/urlcode/urlcode.o: lib/urlcode/urlcode.c.o
+.PHONY : lib/urlcode/urlcode.o
 
 # target to build an object file
-liburl/urlcode.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/liburl/urlcode.c.o
-.PHONY : liburl/urlcode.c.o
+lib/urlcode/urlcode.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/lib/urlcode/urlcode.c.o
+.PHONY : lib/urlcode/urlcode.c.o
 
-liburl/urlcode.i: liburl/urlcode.c.i
-.PHONY : liburl/urlcode.i
+lib/urlcode/urlcode.i: lib/urlcode/urlcode.c.i
+.PHONY : lib/urlcode/urlcode.i
 
 # target to preprocess a source file
-liburl/urlcode.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/liburl/urlcode.c.i
-.PHONY : liburl/urlcode.c.i
+lib/urlcode/urlcode.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/lib/urlcode/urlcode.c.i
+.PHONY : lib/urlcode/urlcode.c.i
 
-liburl/urlcode.s: liburl/urlcode.c.s
-.PHONY : liburl/urlcode.s
+lib/urlcode/urlcode.s: lib/urlcode/urlcode.c.s
+.PHONY : lib/urlcode/urlcode.s
 
 # target to generate assembly for a file
-liburl/urlcode.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/liburl/urlcode.c.s
-.PHONY : liburl/urlcode.c.s
+lib/urlcode/urlcode.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/httpd.dir/build.make CMakeFiles/httpd.dir/lib/urlcode/urlcode.c.s
+.PHONY : lib/urlcode/urlcode.c.s
+
+src/hash.o: src/hash.c.o
+.PHONY : src/hash.o
+
+# target to build an object file
+src/hash.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hash.dir/build.make CMakeFiles/hash.dir/src/hash.c.o
+.PHONY : src/hash.c.o
+
+src/hash.i: src/hash.c.i
+.PHONY : src/hash.i
+
+# target to preprocess a source file
+src/hash.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hash.dir/build.make CMakeFiles/hash.dir/src/hash.c.i
+.PHONY : src/hash.c.i
+
+src/hash.s: src/hash.c.s
+.PHONY : src/hash.s
+
+# target to generate assembly for a file
+src/hash.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hash.dir/build.make CMakeFiles/hash.dir/src/hash.c.s
+.PHONY : src/hash.c.s
+
+src/me.o: src/me.c.o
+.PHONY : src/me.o
+
+# target to build an object file
+src/me.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/me.dir/build.make CMakeFiles/me.dir/src/me.c.o
+.PHONY : src/me.c.o
+
+src/me.i: src/me.c.i
+.PHONY : src/me.i
+
+# target to preprocess a source file
+src/me.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/me.dir/build.make CMakeFiles/me.dir/src/me.c.i
+.PHONY : src/me.c.i
+
+src/me.s: src/me.c.s
+.PHONY : src/me.s
+
+# target to generate assembly for a file
+src/me.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/me.dir/build.make CMakeFiles/me.dir/src/me.c.s
+.PHONY : src/me.c.s
+
+src/settings.o: src/settings.c.o
+.PHONY : src/settings.o
+
+# target to build an object file
+src/settings.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/settings.dir/build.make CMakeFiles/settings.dir/src/settings.c.o
+.PHONY : src/settings.c.o
+
+src/settings.i: src/settings.c.i
+.PHONY : src/settings.i
+
+# target to preprocess a source file
+src/settings.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/settings.dir/build.make CMakeFiles/settings.dir/src/settings.c.i
+.PHONY : src/settings.c.i
+
+src/settings.s: src/settings.c.s
+.PHONY : src/settings.s
+
+# target to generate assembly for a file
+src/settings.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/settings.dir/build.make CMakeFiles/settings.dir/src/settings.c.s
+.PHONY : src/settings.c.s
 
 # Help Target
 help:
@@ -421,20 +458,24 @@ help:
 	@echo "... mbedcrypto"
 	@echo "... mbedtls"
 	@echo "... mbedx509"
+	@echo "... me"
 	@echo "... p256m"
 	@echo "... settings"
-	@echo "... api/auth/login/hash.o"
-	@echo "... api/auth/login/hash.i"
-	@echo "... api/auth/login/hash.s"
-	@echo "... api/public/settings.o"
-	@echo "... api/public/settings.i"
-	@echo "... api/public/settings.s"
 	@echo "... httpd.o"
 	@echo "... httpd.i"
 	@echo "... httpd.s"
-	@echo "... liburl/urlcode.o"
-	@echo "... liburl/urlcode.i"
-	@echo "... liburl/urlcode.s"
+	@echo "... lib/urlcode/urlcode.o"
+	@echo "... lib/urlcode/urlcode.i"
+	@echo "... lib/urlcode/urlcode.s"
+	@echo "... src/hash.o"
+	@echo "... src/hash.i"
+	@echo "... src/hash.s"
+	@echo "... src/me.o"
+	@echo "... src/me.i"
+	@echo "... src/me.s"
+	@echo "... src/settings.o"
+	@echo "... src/settings.i"
+	@echo "... src/settings.s"
 .PHONY : help
 
 

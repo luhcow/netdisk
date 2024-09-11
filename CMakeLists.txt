@@ -1,19 +1,19 @@
 cmake_minimum_required(VERSION 3.10)
 project(httpd)
 
-include_directories (./liburl)
+include_directories (./lib/urlcode)
 include_directories ( /usr/local/include/json-c )
 
 add_subdirectory(./lib/l8w8jwt)
 
-add_executable(httpd httpd.c ./liburl/urlcode.c)
+add_executable(httpd httpd.c ./lib/urlcode/urlcode.c)
 target_link_libraries(httpd  pthread)
 
-add_executable(settings ./api/public/settings.c)
+add_executable(settings ./src/settings.c)
 set_target_properties(settings PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ./api/public/)
 
-add_executable(hash ./api/auth/login/hash.c)
+add_executable(hash ./src/hash.c)
 set_target_properties(hash PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ./api/auth/login/)
 target_link_libraries(hash PRIVATE l8w8jwt json-c)
