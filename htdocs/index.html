@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件管理器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #fileList {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        #fileList th,
+        #fileList td {
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        #fileList th {
+            background-color: #f4f4f4;
+        }
+
+        .breadcrumb {
+            margin-bottom: 10px;
+        }
+
+        .breadcrumb a {
+            text-decoration: none;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>文件管理器</h2>
+
+    <!-- 当前路径 -->
+    <div class="breadcrumb" id="breadcrumb"></div>
+
+    <!-- 文件上传表单 -->
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">上传文件</button>
+
+    <!-- 文件列表表格 -->
+    <table id="fileList">
+        <thead>
+            <tr>
+                <th>名称</th>
+                <th>类型</th>
+                <th>大小</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 文件列表将动态插入 -->
+        </tbody>
+    </table>
+
+    <script src="/fileManager.js"></script>
+</body>
+
+</html>

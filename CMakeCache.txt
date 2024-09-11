@@ -14,6 +14,15 @@
 # EXTERNAL cache entries
 ########################
 
+//Build the library with alternate `calloc` implementation.
+CHILLBUFF_PLATFORM_CALLOC_ALT:BOOL=OFF
+
+//Build the library with alternate `malloc` implementation.
+CHILLBUFF_PLATFORM_MALLOC_ALT:BOOL=OFF
+
+//Build the library with alternate `realloc` implementation.
+CHILLBUFF_PLATFORM_REALLOC_ALT:BOOL=OFF
+
 //Path to a program.
 CMAKE_ADDR2LINE:FILEPATH=/usr/bin/addr2line
 
@@ -100,8 +109,56 @@ CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO:STRING=
 //Enable/Disable output of compile commands during generation.
 CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=
 
+//User executables (bin)
+CMAKE_INSTALL_BINDIR:PATH=bin
+
+//Read-only architecture-independent data (DATAROOTDIR)
+CMAKE_INSTALL_DATADIR:PATH=
+
+//Read-only architecture-independent data root (share)
+CMAKE_INSTALL_DATAROOTDIR:PATH=share
+
+//Documentation root (DATAROOTDIR/doc/PROJECT_NAME)
+CMAKE_INSTALL_DOCDIR:PATH=
+
+//C header files (include)
+CMAKE_INSTALL_INCLUDEDIR:PATH=include
+
+//Info documentation (DATAROOTDIR/info)
+CMAKE_INSTALL_INFODIR:PATH=
+
+//Object code libraries (lib)
+CMAKE_INSTALL_LIBDIR:PATH=lib
+
+//Program executables (libexec)
+CMAKE_INSTALL_LIBEXECDIR:PATH=libexec
+
+//Locale-dependent data (DATAROOTDIR/locale)
+CMAKE_INSTALL_LOCALEDIR:PATH=
+
+//Modifiable single-machine data (var)
+CMAKE_INSTALL_LOCALSTATEDIR:PATH=var
+
+//Man documentation (DATAROOTDIR/man)
+CMAKE_INSTALL_MANDIR:PATH=
+
+//C header files for non-gcc (/usr/include)
+CMAKE_INSTALL_OLDINCLUDEDIR:PATH=/usr/include
+
 //Install path prefix, prepended onto install directories.
 CMAKE_INSTALL_PREFIX:PATH=/usr/local
+
+//Run-time variable data (LOCALSTATEDIR/run)
+CMAKE_INSTALL_RUNSTATEDIR:PATH=
+
+//System admin executables (sbin)
+CMAKE_INSTALL_SBINDIR:PATH=sbin
+
+//Modifiable architecture-independent data (com)
+CMAKE_INSTALL_SHAREDSTATEDIR:PATH=com
+
+//Read-only single-machine data (etc)
+CMAKE_INSTALL_SYSCONFDIR:PATH=etc
 
 //Path to a program.
 CMAKE_LINKER:FILEPATH=/usr/bin/ld
@@ -209,6 +266,99 @@ CMAKE_STRIP:FILEPATH=/usr/bin/strip
 // Studio IDE projects all commands are done without /nologo.
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
+//Disable package configuration, target export and installation
+DISABLE_PACKAGE_CONFIG_AND_INSTALL:BOOL=ON
+
+//Build Mbed TLS programs.
+ENABLE_PROGRAMS:BOOL=OFF
+
+//Build Mbed TLS tests.
+ENABLE_TESTING:BOOL=OFF
+
+//Generate the auto-generated files as needed
+GEN_FILES:BOOL=OFF
+
+//Install Mbed TLS headers.
+INSTALL_MBEDTLS_HEADERS:BOOL=ON
+
+//Build l8w8jwt as a DLL.
+L8W8JWT_BUILD_DLL:BOOL=OFF
+
+//Use l8w8jwt as a DLL.
+L8W8JWT_DLL:BOOL=OFF
+
+//Build the library with EdDSA support (this will include a dependency
+// for lib/ed25519).
+L8W8JWT_ENABLE_EDDSA:BOOL=OFF
+
+//Build l8w8jwt example programs.
+L8W8JWT_ENABLE_EXAMPLES:BOOL=OFF
+
+//Build l8w8jwt tests.
+L8W8JWT_ENABLE_TESTS:BOOL=OFF
+
+//Build the library and package it into a .tar.gz after successfully
+// building.
+L8W8JWT_PACKAGE:BOOL=OFF
+
+//Build the library with alternate `calloc` implementation.
+L8W8JWT_PLATFORM_CALLOC_ALT:BOOL=OFF
+
+//Build the library with alternate `malloc` implementation.
+L8W8JWT_PLATFORM_MALLOC_ALT:BOOL=OFF
+
+//Build the library with alternate `realloc` implementation.
+L8W8JWT_PLATFORM_REALLOC_ALT:BOOL=OFF
+
+//Build the library with alternate `time` API implementation.
+L8W8JWT_PLATFORM_TIME_ALT:BOOL=OFF
+
+//Build the library for a device that has a particularly small
+// stack.
+L8W8JWT_SMALL_STACK:BOOL=OFF
+
+//Explicitly link Mbed TLS library to pthread.
+LINK_WITH_PTHREAD:BOOL=OFF
+
+//Explicitly link Mbed TLS library to trusted_storage.
+LINK_WITH_TRUSTED_STORAGE:BOOL=OFF
+
+//Mbed TLS config file (overrides default).
+MBEDTLS_CONFIG_FILE:FILEPATH=
+
+//Compiler warnings treated as errors
+MBEDTLS_FATAL_WARNINGS:BOOL=ON
+
+//Mbed TLS user config file (appended to default).
+MBEDTLS_USER_CONFIG_FILE:FILEPATH=
+
+//Value Computed by CMake
+Mbed TLS_BINARY_DIR:STATIC=/home/rings/tinyhttpd-0.1.0/lib/l8w8jwt/mbedtls
+
+//Value Computed by CMake
+Mbed TLS_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+Mbed TLS_SOURCE_DIR:STATIC=/home/rings/tinyhttpd-0.1.0/lib/l8w8jwt/lib/mbedtls
+
+//Allow unsafe builds. These builds ARE NOT SECURE.
+UNSAFE_BUILD:BOOL=OFF
+
+//Build Mbed TLS shared library.
+USE_SHARED_MBEDTLS_LIBRARY:BOOL=OFF
+
+//Build Mbed TLS static library.
+USE_STATIC_MBEDTLS_LIBRARY:BOOL=ON
+
+//Value Computed by CMake
+chillbuff_BINARY_DIR:STATIC=/home/rings/tinyhttpd-0.1.0/lib/l8w8jwt/chillbuff
+
+//Value Computed by CMake
+chillbuff_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+chillbuff_SOURCE_DIR:STATIC=/home/rings/tinyhttpd-0.1.0/lib/l8w8jwt/lib/chillbuff
+
 //Value Computed by CMake
 httpd_BINARY_DIR:STATIC=/home/rings/tinyhttpd-0.1.0
 
@@ -217,6 +367,24 @@ httpd_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
 httpd_SOURCE_DIR:STATIC=/home/rings/tinyhttpd-0.1.0
+
+//Value Computed by CMake
+l8w8jwt_BINARY_DIR:STATIC=/home/rings/tinyhttpd-0.1.0/lib/l8w8jwt
+
+//Value Computed by CMake
+l8w8jwt_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+l8w8jwt_SOURCE_DIR:STATIC=/home/rings/tinyhttpd-0.1.0/lib/l8w8jwt
+
+//Dependencies for the target
+mbedcrypto_LIB_DEPENDS:STATIC=general;everest;general;p256m;
+
+//Dependencies for the target
+mbedtls_LIB_DEPENDS:STATIC=general;mbedx509;
+
+//Dependencies for the target
+mbedx509_LIB_DEPENDS:STATIC=general;mbedcrypto;
 
 
 ########################
@@ -304,8 +472,40 @@ CMAKE_GENERATOR_TOOLSET:INTERNAL=
 //Source directory with the top level CMakeLists.txt file for this
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=/home/rings/tinyhttpd-0.1.0
+//ADVANCED property for variable: CMAKE_INSTALL_BINDIR
+CMAKE_INSTALL_BINDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_DATADIR
+CMAKE_INSTALL_DATADIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_DATAROOTDIR
+CMAKE_INSTALL_DATAROOTDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_DOCDIR
+CMAKE_INSTALL_DOCDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_INCLUDEDIR
+CMAKE_INSTALL_INCLUDEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_INFODIR
+CMAKE_INSTALL_INFODIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LIBDIR
+CMAKE_INSTALL_LIBDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LIBEXECDIR
+CMAKE_INSTALL_LIBEXECDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LOCALEDIR
+CMAKE_INSTALL_LOCALEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LOCALSTATEDIR
+CMAKE_INSTALL_LOCALSTATEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_MANDIR
+CMAKE_INSTALL_MANDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_OLDINCLUDEDIR
+CMAKE_INSTALL_OLDINCLUDEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_RUNSTATEDIR
+CMAKE_INSTALL_RUNSTATEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_SBINDIR
+CMAKE_INSTALL_SBINDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_SHAREDSTATEDIR
+CMAKE_INSTALL_SHAREDSTATEDIR-ADVANCED:INTERNAL=1
 //Install .so files without execute permission.
 CMAKE_INSTALL_SO_NO_EXE:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_SYSCONFDIR
+CMAKE_INSTALL_SYSCONFDIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_LINKER
 CMAKE_LINKER-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_MAKE_PROGRAM
@@ -323,7 +523,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=9
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
@@ -366,4 +566,15 @@ CMAKE_STRIP-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
+//Test C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS
+C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS:INTERNAL=1
+//Details about finding Python3
+FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[/usr/bin/python3.10][cfound components: Interpreter ][v3.10.12()]
+//CMAKE_INSTALL_PREFIX during last run
+_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=/usr/local
+//Path to a program.
+_Python3_EXECUTABLE:INTERNAL=/usr/bin/python3.10
+//Python3 Properties
+_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;10;12;64;;cpython-310-x86_64-linux-gnu;/usr/lib/python3.10;/usr/lib/python3.10;/usr/local/lib/python3.10/dist-packages;/usr/local/lib/python3.10/dist-packages
+_Python3_INTERPRETER_SIGNATURE:INTERNAL=61380851b1f49cd20124cec6c9ca8095
 
