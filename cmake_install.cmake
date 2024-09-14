@@ -45,6 +45,7 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/home/rings/tinyhttpd-0.1.0/lib/l8w8jwt/cmake_install.cmake")
+  include("/home/rings/tinyhttpd-0.1.0/lib/json-c/cmake_install.cmake")
 
 endif()
 
