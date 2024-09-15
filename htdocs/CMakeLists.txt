@@ -4,3 +4,4 @@ project(httpd)
 set(SOURCE_FILES path_html.c)
 
 add_executable(path ${SOURCE_FILES})
+add_executable(upload upload.c)
