@@ -7,7 +7,7 @@
 int main(void)
 {
     // 设置 Content-type 头，返回HTML内容
-    printf("Content-type: text/html\n\n");
+    printf("Content-type: text/html; charset=utf-8\n\n");
 
     // 打印 HTML 页面的头部
     printf("<html><head><title>Image Upload</title></head><body>\n");
@@ -35,6 +35,15 @@ int main(void)
                 char boundary_str[BOUNDARY_SIZE];
                 strncpy(boundary_str, post_data, boundary - post_data);
                 boundary_str[boundary - post_data] = '\0'; // 边界字符串
+                //找出来filename  
+                char* filename_start = strstr(post_data, "filename=\"") + 10;//文件名的开始
+                char* filename_end = strstr(filename_start, "\"");//文件名的结束
+                char path[1024] = "./";//相对路径
+                strcat(path, getenv("URL_PATH"));
+                *(strrchr(path, '/') + 1) = '\0';//删掉cgi的名字
+                strncat(path, filename_start, filename_end - filename_start);//上传路径
+
+                char* new_urlpath = path + 8;// ./htdocs/ --> /
 
                 // 查找文件数据
                 char* file_start = strstr(post_data, "\r\n\r\n") + 4;  // 文件内容的起始位置
@@ -42,15 +51,16 @@ int main(void)
                 int file_size = file_end - file_start;
 
                 // 保存图片到服务器
-                FILE* image_file = fopen("./htdocs/uploaded_image.png", "wb");
+                FILE* image_file = fopen(path, "wb");
                 if (image_file)
                 {
                     fwrite(file_start, 1, file_size, image_file);
                     fclose(image_file);
                     printf("<h1>Image uploaded successfully!</h1>\n");
+                    printf("<p>Image uploaded in %s</p>\n", path);
 
                     // 生成图片显示的HTML代码
-                    printf("<img src=\"uploaded_image.png\" alt=\"Uploaded Image\" />\n");
+                    printf("<img src=\"%s\" alt=\"Uploaded Image\" />\n", new_urlpath);
                 }
                 else
                 {
