@@ -5,6 +5,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "authorization.h"
 #include "l8w8jwt/claim.h"
 #include "l8w8jwt/decode.h"
 
@@ -80,19 +81,19 @@ int main(void) {
    char user_name[100];
 
    char pwd_ts_str[100];
-   sprintf(pwd_ts_str, "%ld", pwd_ts);
+   // sprintf(pwd_ts_str, "%ld", pwd_ts);
 
-   struct l8w8jwt_claim claims[2];  // 数据库占位符
-   claims[0].type = L8W8JWT_CLAIM_TYPE_STRING;
-   claims[0].key = "username";
-   claims[0].key_length = strlen("username");
-   claims[0].value = user_name;
-   claims[0].value_length = strlen(user_name);
-   claims[1].type = L8W8JWT_CLAIM_TYPE_INTEGER;
-   claims[1].key = "pwd_ts";
-   claims[1].key_length = strlen("pwd_ts");
-   claims[1].value = pwd_ts_str;
-   claims[1].value_length = strlen(pwd_ts_str);  // 数据库占位符
+   // struct l8w8jwt_claim claims[2];  // 数据库占位符
+   // claims[0].type = L8W8JWT_CLAIM_TYPE_STRING;
+   // claims[0].key = "username";
+   // claims[0].key_length = strlen("username");
+   // claims[0].value = user_name;
+   // claims[0].value_length = strlen(user_name);
+   // claims[1].type = L8W8JWT_CLAIM_TYPE_INTEGER;
+   // claims[1].key = "pwd_ts";
+   // claims[1].key_length = strlen("pwd_ts");
+   // claims[1].value = pwd_ts_str;
+   // claims[1].value_length = strlen(pwd_ts_str);  // 数据库占位符
 
    // FILE *fp = fopen("hash.txt", "r");
    // fseek(fp, 0, SEEK_END);
