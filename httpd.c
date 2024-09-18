@@ -312,7 +312,7 @@ void execute_cgi(int client, const char* path, const char* method,
       char query_env[255];
       char length_env[255];
       char path_env[255];
-      char authorization_env[1024];
+      char authorization_env[2048];
 
       /* 把 STDOUT 重定向到 cgi_output 的写入端 */
       dup2(cgi_output[1], 1);
@@ -417,7 +417,7 @@ int get_line(int sock, char* buf, int size) {
 
 char* get_file_extension(const char szSomeFileName[]) {
    char* pLastSlash = strrchr(szSomeFileName, '.');
-   char* pszBaseName = pLastSlash ? pLastSlash + 1 : szSomeFileName;
+   const char* pszBaseName = pLastSlash ? pLastSlash + 1 : szSomeFileName;
    return pszBaseName;
 }
 /**********************************************************************/

@@ -4,15 +4,15 @@ project(httpd)
 include_directories (./include)
 
 # 添加对gdb的支持
-SET(CMAKE_BUILD_TYPE "Debug")
-SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
-SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+# SET(CMAKE_BUILD_TYPE "Debug")
+# SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
+# SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 # 添加 l8w8jwt 和 json-c 库
 add_subdirectory(./lib/l8w8jwt)
 add_subdirectory(./lib/json-c)
 
-# 编译 httpd 可执行文件，并链接 pthread (根据平台需要)
+# 编译 httpd 可执行文件，并链接 pthread 
 add_executable(httpd httpd.c ./src/urlcode.c)
 target_link_libraries(httpd pthread)
 
@@ -45,3 +45,9 @@ add_executable(list ./src/list.c ./src/authorization.c)
 set_target_properties(list PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ./api/auth/)
 target_link_libraries(list PRIVATE l8w8jwt json-c)
+
+# # 编译 offline_download_tools，输出到特定路径
+# add_executable(offline_download_tools ./src/offline_download_tools.c ./src/authorization.c)
+# set_target_properties(list PROPERTIES
+#     RUNTIME_OUTPUT_DIRECTORY ./api/public/)
+# target_link_libraries(list PRIVATE l8w8jwt json-c)
