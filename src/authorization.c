@@ -1,5 +1,8 @@
 #include "authorization.h"
 
+#include <stdio.h>
+#include <string.h>
+
 char KEY[] = "iJOIIIJIhidsfioe7837483HUHUHUuhuh";  // 数据库占位符
 
 bool encode_jwt(char JWT[], char user_name[], time_t pwd_ts,
