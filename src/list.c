@@ -30,7 +30,7 @@ int main() {
    struct l8w8jwt_claim out_claims[2];
    struct l8w8jwt_claim* claim = out_claims;
 
-   if (!encode_jwt(jwt, username, pwd_ts, &claim, 2)) {
+   if (!decode_jwt(jwt, username, pwd_ts, &claim, 2)) {
       char* error_token =
           "{\"code\":401,\"message\":\"token is "
           "expired\",\"data\":null}";
@@ -54,7 +54,7 @@ int main() {
    struct json_object* jobj = json_tokener_parse(post_data);
    const char* path =
        json_object_get_string(json_object_object_get(jobj, "path"));
-   char dir_path[4096] = "/htdocs";
+   char dir_path[4096] = "./htdocs";
    strcat(dir_path, path);
 
    struct dirent* entry;
