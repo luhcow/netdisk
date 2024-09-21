@@ -255,8 +255,8 @@ void execute_cgi(int client, const char* path, const char* method,
    {
       while ((numchars > 0) && strcmp("\n", buf)) { /* read & discard headers */
          char* str = NULL;
-         if ((str = strstr(buf, "Authorization:")) != NULL) {
-            strcpy(authorization, str + strlen("Authorization: "));
+         if ((str = strstr(buf, "authorization:")) != NULL) {
+            strcpy(authorization, str + strlen("authorization: "));
          }
          numchars = get_line(client, buf, sizeof(buf));
       }
@@ -265,8 +265,8 @@ void execute_cgi(int client, const char* path, const char* method,
       /* 对 POST 的 HTTP 请求中找出 content_length */
       numchars = get_line(client, buf, sizeof(buf));
       while ((numchars > 0) && strcmp("\n", buf)) {
-         if ((str = strstr(buf, "Authorization:")) != NULL) {
-            strcpy(authorization, str + strlen("Authorization: "));
+         if ((str = strstr(buf, "authorization:")) != NULL) {
+            strcpy(authorization, str + strlen("authorization: "));
          }
          /*利用 \0 进行分隔 */
          buf[15] = '\0';
@@ -283,6 +283,8 @@ void execute_cgi(int client, const char* path, const char* method,
          return;
       }
    }
+
+   // fputs(authorization, stderr);
 
    /* 正确，HTTP 状态码 200 */
    sprintf(buf, "HTTP/1.0 200 OK\r\n");

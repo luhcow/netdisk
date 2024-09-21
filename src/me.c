@@ -112,9 +112,11 @@ int main(void) {
    char jwt[255];
    strcpy(jwt, getenv("AUTHORIZATION"));
 
+   fputs(jwt, stderr);
+
    struct l8w8jwt_claim out_claims[2];
    struct l8w8jwt_claim *claim = out_claims;
-   if (encode_jwt(jwt, username, pwd_ts, &claim, 2)) {
+   if (decode_jwt(jwt, username, pwd_ts, &claim, 2)) {
       FILE *fp = fopen(settings_conf, "r");
       if (fp == NULL) {
          printf("open file error\n");

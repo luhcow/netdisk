@@ -2,3 +2,5 @@ api/
 .vscode/
 build/
 cmake-build*/
+httpd
+hash.txt
