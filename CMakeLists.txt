@@ -57,3 +57,8 @@ add_executable(form src/form.c)
 set_target_properties(form PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ../api/fs/)
 target_link_libraries(form PRIVATE l8w8jwt json-c)
+
+add_executable(remove src/remove.c)
+set_target_properties(form PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ../api/fs/)
+target_link_libraries(form PRIVATE l8w8jwt json-c)
