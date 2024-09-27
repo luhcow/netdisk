@@ -413,260 +413,251 @@ void execute_cgi(int client, const char* path, const char* method,
             waitpid(pid, &status, 0);
         }
     }
+}
+/**********************************************************************/
+/* Get a line from a socket, whether the line ends in a newline,
+ * carriage return, or a CRLF combination.  Terminates the string read
+ * with a null character.  If no newline indicator is found before the
+ * end of the buffer, the string is terminated with a null.  If any of
+ * the above three line terminators is read, the last character of the
+ * string will be a linefeed and the string will be terminated with a
+ * null character.
+ * Parameters: the socket descriptor
+ *             the buffer to save the data in
+ *             the size of the buffer
+ * Returns: the number of bytes stored (excluding null) */
+/**********************************************************************/
+int get_line(int sock, char* buf, int size) {
+    int i = 0;
+    char c = '\0';
 
-    /**********************************************************************/
-    /* Get a line from a socket, whether the line ends in a newline,
-     * carriage return, or a CRLF combination.  Terminates the string read
-     * with a null character.  If no newline indicator is found before the
-     * end of the buffer, the string is terminated with a null.  If any of
-     * the above three line terminators is read, the last character of the
-     * string will be a linefeed and the string will be terminated with a
-     * null character.
-     * Parameters: the socket descriptor
-     *             the buffer to save the data in
-     *             the size of the buffer
-     * Returns: the number of bytes stored (excluding null) */
-    /**********************************************************************/
-    int get_line(int sock, char* buf, int size) {
-        int i = 0;
-        char c = '\0';
-
-        /*把终止条件统一为 \n 换行符，标准化 buf 数组*/
-        while ((i < size - 1) && (c != '\n')) {
-            /*一次仅接收一个字节*/
-            int n = recv(sock, &c, 1, 0);
-            /* DEBUG printf("%02X\n", c); */
-            if (n > 0) {
-                /*收到 \r 则继续接收下个字节，因为换行符可能是 \r\n */
-                if (c == '\r') {
-                    /*使用 MSG_PEEK
-                     * 标志使下一次读取依然可以得到这次读取的内容，可认为接收窗口不滑动*/
-                    n = recv(sock, &c, 1, MSG_PEEK);
-                    /* DEBUG printf("%02X\n", c); */
-                    /*但如果是换行符则把它吸收掉*/
-                    if ((n > 0) && (c == '\n'))
-                        recv(sock, &c, 1, 0);
-                    else
-                        c = '\n';
-                }
-                /*存到缓冲区*/
-                buf[i] = c;
-                i++;
-            } else
-                c = '\n';
-        }
-        buf[i] = '\0';
-
-        /*返回 buf 数组大小*/
-        return (i);
+    /*把终止条件统一为 \n 换行符，标准化 buf 数组*/
+    while ((i < size - 1) && (c != '\n')) {
+        /*一次仅接收一个字节*/
+        int n = recv(sock, &c, 1, 0);
+        /* DEBUG printf("%02X\n", c); */
+        if (n > 0) {
+            /*收到 \r 则继续接收下个字节，因为换行符可能是 \r\n */
+            if (c == '\r') {
+                /*使用 MSG_PEEK
+                 * 标志使下一次读取依然可以得到这次读取的内容，可认为接收窗口不滑动*/
+                n = recv(sock, &c, 1, MSG_PEEK);
+                /* DEBUG printf("%02X\n", c); */
+                /*但如果是换行符则把它吸收掉*/
+                if ((n > 0) && (c == '\n'))
+                    recv(sock, &c, 1, 0);
+                else
+                    c = '\n';
+            }
+            /*存到缓冲区*/
+            buf[i] = c;
+            i++;
+        } else
+            c = '\n';
     }
+    buf[i] = '\0';
 
-    char* get_file_extension(const char szSomeFileName[]) {
-        char* pLastSlash = strrchr(szSomeFileName, '.');
-        const char* pszBaseName = pLastSlash ? pLastSlash + 1 : szSomeFileName;
-        return pszBaseName;
-    }
+    /*返回 buf 数组大小*/
+    return (i);
+}
 
-    /**********************************************************************/
-    /* Return the informational HTTP headers about a file. */
-    /* Parameters: the socket to print the headers on
-     *             the name of the file */
-    /**********************************************************************/
-    void headers(int client, const char* filename, FILE* resource) {
-        char buf[1024];
-        char content_type[100];
-        if (strcmp(get_file_extension(filename), "html") ==
-            0) /* could use filename to determine file type */
-            strcpy(content_type, "text/html");
-        else
-            strcpy(content_type, "application/octet-stream");
-        /*正常的 HTTP header */
-        strcpy(buf, "HTTP/1.0 200 OK\r\n");
+/**********************************************************************/
+/* Return the informational HTTP headers about a file. */
+/* Parameters: the socket to print the headers on
+ *             the name of the file */
+/**********************************************************************/
+void headers(int client, const char* filename, FILE* resource) {
+    char buf[1024];
+    char content_type[100];
+
+    strcpy(content_type, "application/octet-stream");
+    /*正常的 HTTP header */
+    strcpy(buf, "HTTP/1.0 200 OK\r\n");
+    send(client, buf, strlen(buf), 0);
+    /*服务器信息*/
+    strcpy(buf, SERVER_STRING);
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "Content-Type: %s\r\n", content_type);
+    send(client, buf, strlen(buf), 0);
+    if (strcmp(content_type, "text/html") != 0) {
+        fseek(resource, 0, SEEK_END);
+        long file_size = ftell(resource);
+        fseek(resource, 0, SEEK_SET);
+        sprintf(buf, "Content-Disposition: attachment; filename=\"%s\"\r\n",
+                filename);
         send(client, buf, strlen(buf), 0);
-        /*服务器信息*/
-        strcpy(buf, SERVER_STRING);
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "Content-Type: %s\r\n", content_type);
-        send(client, buf, strlen(buf), 0);
-        if (strcmp(content_type, "text/html") != 0) {
-            fseek(resource, 0, SEEK_END);
-            long file_size = ftell(resource);
-            fseek(resource, 0, SEEK_SET);
-            sprintf(buf, "Content-Disposition: attachment; filename=\"%s\"\r\n",
-                    filename);
-            send(client, buf, strlen(buf), 0);
-            sprintf(buf, "Content-Length: %ld\r\n", file_size);
-            send(client, buf, strlen(buf), 0);
-        }
-        strcpy(buf, "\r\n");
+        sprintf(buf, "Content-Length: %ld\r\n", file_size);
         send(client, buf, strlen(buf), 0);
     }
+    strcpy(buf, "\r\n");
+    send(client, buf, strlen(buf), 0);
+}
 
-    void headers_204(int client, const char* filename) {
-        char buf[1024];
-        strcpy(buf, "HTTP/1.0 204 No Content\r\n");
-        send(client, buf, strlen(buf), 0);
-        strcpy(buf, "Access-Control-Allow-Headers: *\r\n");
-        send(client, buf, strlen(buf), 0);
-        strcpy(buf, "Access-Control-Allow-Methods: *\r\n");
-        send(client, buf, strlen(buf), 0);
-        strcpy(buf, "Access-Control-Allow-Origin: *\r\n");
-        send(client, buf, strlen(buf), 0);
-        strcpy(buf, "Access-Control-Max-Age: 43200\r\n");
-        send(client, buf, strlen(buf), 0);
-        strcpy(buf, "\r\n");
-        send(client, buf, strlen(buf), 0);
+void headers_204(int client, const char* filename) {
+    char buf[1024];
+    strcpy(buf, "HTTP/1.0 204 No Content\r\n");
+    send(client, buf, strlen(buf), 0);
+    strcpy(buf, "Access-Control-Allow-Headers: *\r\n");
+    send(client, buf, strlen(buf), 0);
+    strcpy(buf, "Access-Control-Allow-Methods: *\r\n");
+    send(client, buf, strlen(buf), 0);
+    strcpy(buf, "Access-Control-Allow-Origin: *\r\n");
+    send(client, buf, strlen(buf), 0);
+    strcpy(buf, "Access-Control-Max-Age: 43200\r\n");
+    send(client, buf, strlen(buf), 0);
+    strcpy(buf, "\r\n");
+    send(client, buf, strlen(buf), 0);
+}
+
+/**********************************************************************/
+/* Give a client a 404 not found status message. */
+/**********************************************************************/
+void not_found(int client) {
+    char buf[1024];
+
+    /* 404 页面 */
+    sprintf(buf, "HTTP/1.0 404 NOT FOUND\r\n");
+    send(client, buf, strlen(buf), 0);
+    /*服务器信息*/
+    sprintf(buf, SERVER_STRING);
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "Content-Type: text/html\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "\r\n");
+    send(client, buf, strlen(buf), 0);
+
+    FILE* not_found_html = fopen("./htdocs/404.html", "r");
+    cat(client, not_found_html);
+    fclose(not_found_html);
+    // sprintf(buf, "<HTML><TITLE>Not Found</TITLE>\r\n");
+    // send(client, buf, strlen(buf), 0);
+    // sprintf(buf, "<BODY><P>The server could not fulfill\r\n");
+    // send(client, buf, strlen(buf), 0);
+    // sprintf(buf, "your request because the resource specified\r\n");
+    // send(client, buf, strlen(buf), 0);
+    // sprintf(buf, "is unavailable or nonexistent.\r\n");
+    // send(client, buf, strlen(buf), 0);
+    // sprintf(buf, "</BODY></HTML>\r\n");
+    // send(client, buf, strlen(buf), 0);
+}
+
+void not_found_debug(int client, const char* path) {
+    char buf[1024];
+
+    /* 404 页面 */
+    sprintf(buf, "HTTP/1.0 404 NOT FOUND\r\n");
+    send(client, buf, strlen(buf), 0);
+    /*服务器信息*/
+    sprintf(buf, SERVER_STRING);
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "Content-Type: text/html\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "<HTML><TITLE>Not Found</TITLE>\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "<BODY><P>The server could not fulfill\r\n");
+    send(client, buf, strlen(buf), 0);
+    send(client, path, strlen(path), 0);
+    sprintf(buf, "your request because the resource specified\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "is unavailable or nonexistent.\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "</BODY></HTML>\r\n");
+    send(client, buf, strlen(buf), 0);
+}
+
+/**********************************************************************/
+/* Send a regular file to the client.  Use headers, and report
+ * errors to client if they occur.
+ * Parameters: a pointer to a file structure produced from the socket
+ *              file descriptor
+ *             the name of the file to serve */
+/**********************************************************************/
+void serve_file(int client, const char* filename) {
+    FILE* resource = NULL;
+    int numchars = 1;
+    char buf[1024];
+
+    /*读取并丢弃 header */
+    buf[0] = 'A';
+    buf[1] = '\0';
+    while ((numchars > 0) && strcmp("\n", buf)) /* read & discard headers */
+        numchars = get_line(client, buf, sizeof(buf));
+
+    /*打开 sever 的文件*/
+    resource = fopen(filename, "r");
+    if (resource == NULL)
+        not_found(client);
+    else {
+        /*写 HTTP header */
+        headers(client, filename, resource);
+        /*复制文件*/
+        cat(client, resource);
     }
+    fclose(resource);
+}
 
-    /**********************************************************************/
-    /* Give a client a 404 not found status message. */
-    /**********************************************************************/
-    void not_found(int client) {
-        char buf[1024];
+/**********************************************************************/
+/* This function starts the process of listening for web connections
+ * on a specified port.  If the port is 0, then dynamically allocate a
+ * port and modify the original port variable to reflect the actual
+ * port.
+ * Parameters: pointer to variable containing the port to connect on
+ * Returns: the socket */
+/**********************************************************************/
+int startup(u_short* port) {
+    int httpd = 0;
+    struct sockaddr_in name;
 
-        /* 404 页面 */
-        sprintf(buf, "HTTP/1.0 404 NOT FOUND\r\n");
-        send(client, buf, strlen(buf), 0);
-        /*服务器信息*/
-        sprintf(buf, SERVER_STRING);
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "Content-Type: text/html\r\n");
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "\r\n");
-        send(client, buf, strlen(buf), 0);
-
-        FILE* not_found_html = fopen("./htdocs/404.html", "r");
-        cat(client, not_found_html);
-        fclose(not_found_html);
-        // sprintf(buf, "<HTML><TITLE>Not Found</TITLE>\r\n");
-        // send(client, buf, strlen(buf), 0);
-        // sprintf(buf, "<BODY><P>The server could not fulfill\r\n");
-        // send(client, buf, strlen(buf), 0);
-        // sprintf(buf, "your request because the resource specified\r\n");
-        // send(client, buf, strlen(buf), 0);
-        // sprintf(buf, "is unavailable or nonexistent.\r\n");
-        // send(client, buf, strlen(buf), 0);
-        // sprintf(buf, "</BODY></HTML>\r\n");
-        // send(client, buf, strlen(buf), 0);
+    /*建立 socket */
+    httpd = socket(PF_INET, SOCK_STREAM, 0);
+    if (httpd == -1)
+        error_die("socket");
+    memset(&name, 0, sizeof(name));
+    name.sin_family = AF_INET;
+    name.sin_port = htons(*port);
+    name.sin_addr.s_addr = htonl(INADDR_ANY);
+    if (bind(httpd, (struct sockaddr*)&name, sizeof(name)) < 0)
+        error_die("bind");
+    /*如果当前指定端口是 0，则动态随机分配一个端口*/
+    if (*port == 0) /* if dynamically allocating a port */
+    {
+        int namelen = sizeof(name);
+        if (getsockname(httpd, (struct sockaddr*)&name, &namelen) == -1)
+            error_die("getsockname");
+        *port = ntohs(name.sin_port);
     }
+    /*开始监听*/
+    if (listen(httpd, 5) < 0)
+        error_die("listen");
+    /*返回 socket id */
+    return (httpd);
+}
 
-    void not_found_debug(int client, const char* path) {
-        char buf[1024];
+/**********************************************************************/
+/* Inform the client that the requested web method has not been
+ * implemented.
+ * Parameter: the client socket */
+/**********************************************************************/
+void unimplemented(int client) {
+    char buf[1024];
 
-        /* 404 页面 */
-        sprintf(buf, "HTTP/1.0 404 NOT FOUND\r\n");
-        send(client, buf, strlen(buf), 0);
-        /*服务器信息*/
-        sprintf(buf, SERVER_STRING);
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "Content-Type: text/html\r\n");
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "\r\n");
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "<HTML><TITLE>Not Found</TITLE>\r\n");
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "<BODY><P>The server could not fulfill\r\n");
-        send(client, buf, strlen(buf), 0);
-        send(client, path, strlen(path), 0);
-        sprintf(buf, "your request because the resource specified\r\n");
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "is unavailable or nonexistent.\r\n");
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "</BODY></HTML>\r\n");
-        send(client, buf, strlen(buf), 0);
-    }
-
-    /**********************************************************************/
-    /* Send a regular file to the client.  Use headers, and report
-     * errors to client if they occur.
-     * Parameters: a pointer to a file structure produced from the socket
-     *              file descriptor
-     *             the name of the file to serve */
-    /**********************************************************************/
-    void serve_file(int client, const char* filename) {
-        FILE* resource = NULL;
-        int numchars = 1;
-        char buf[1024];
-
-        /*读取并丢弃 header */
-        buf[0] = 'A';
-        buf[1] = '\0';
-        while ((numchars > 0) && strcmp("\n", buf)) /* read & discard headers */
-            numchars = get_line(client, buf, sizeof(buf));
-
-        /*打开 sever 的文件*/
-        resource = fopen(filename, "r");
-        if (resource == NULL)
-            not_found(client);
-        else {
-            /*写 HTTP header */
-            headers(client, filename, resource);
-            /*复制文件*/
-            cat(client, resource);
-        }
-        fclose(resource);
-    }
-
-    /**********************************************************************/
-    /* This function starts the process of listening for web connections
-     * on a specified port.  If the port is 0, then dynamically allocate a
-     * port and modify the original port variable to reflect the actual
-     * port.
-     * Parameters: pointer to variable containing the port to connect on
-     * Returns: the socket */
-    /**********************************************************************/
-    int startup(u_short * port) {
-        int httpd = 0;
-        struct sockaddr_in name;
-
-        /*建立 socket */
-        httpd = socket(PF_INET, SOCK_STREAM, 0);
-        if (httpd == -1)
-            error_die("socket");
-        memset(&name, 0, sizeof(name));
-        name.sin_family = AF_INET;
-        name.sin_port = htons(*port);
-        name.sin_addr.s_addr = htonl(INADDR_ANY);
-        if (bind(httpd, (struct sockaddr*)&name, sizeof(name)) < 0)
-            error_die("bind");
-        /*如果当前指定端口是 0，则动态随机分配一个端口*/
-        if (*port == 0) /* if dynamically allocating a port */
-        {
-            int namelen = sizeof(name);
-            if (getsockname(httpd, (struct sockaddr*)&name, &namelen) == -1)
-                error_die("getsockname");
-            *port = ntohs(name.sin_port);
-        }
-        /*开始监听*/
-        if (listen(httpd, 5) < 0)
-            error_die("listen");
-        /*返回 socket id */
-        return (httpd);
-    }
-
-    /**********************************************************************/
-    /* Inform the client that the requested web method has not been
-     * implemented.
-     * Parameter: the client socket */
-    /**********************************************************************/
-    void unimplemented(int client) {
-        char buf[1024];
-
-        /* HTTP method 不被支持*/
-        sprintf(buf, "HTTP/1.0 501 Method Not Implemented\r\n");
-        send(client, buf, strlen(buf), 0);
-        /*服务器信息*/
-        sprintf(buf, SERVER_STRING);
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "Content-Type: text/html\r\n");
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "\r\n");
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "<HTML><HEAD><TITLE>Method Not Implemented\r\n");
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "</TITLE></HEAD>\r\n");
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "<BODY><P>HTTP request method not supported.\r\n");
+    /* HTTP method 不被支持*/
+    sprintf(buf, "HTTP/1.0 501 Method Not Implemented\r\n");
+    send(client, buf, strlen(buf), 0);
+    /*服务器信息*/
+    sprintf(buf, SERVER_STRING);
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "Content-Type: text/html\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "<HTML><HEAD><TITLE>Method Not Implemented\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "</TITLE></HEAD>\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "<BODY><P>HTTP request method not supported.\r\n");
         send(client, buf, strlen(buf), 0);
         sprintf(buf, "</BODY></HTML>\r\n");
         send(client, buf, strlen(buf), 0);
