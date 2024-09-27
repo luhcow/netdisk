@@ -1,61 +1,61 @@
 {
-    "code": 200,
-    "message": "success",
-    "data": {
-        "content": [
-            {
-                "name": "rsl",
-                "size": 0,
-                "is_dir": true,
-                "modified": "2023-05-29T12:06:02.681205251Z",
-                "created": "2023-05-29T12:06:02.681205251Z",
-                "sign": "",
-                "thumb": "",
-                "type": 1,
-                "hashinfo": "null",
-                "hash_info": null
-            },
-            {
-                "name": "个人文档",
-                "size": 0,
-                "is_dir": true,
-                "modified": "2023-03-20T08:21:08.685199689Z",
-                "created": "2023-03-20T08:21:08.685199689Z",
-                "sign": "",
-                "thumb": "",
-                "type": 1,
-                "hashinfo": "null",
-                "hash_info": null
-            },
-            {
-                "name": "储存",
-                "size": 0,
-                "is_dir": true,
-                "modified": "2023-03-27T11:21:11.611159379Z",
-                "created": "2023-03-27T11:21:11.611159379Z",
-                "sign": "",
-                "thumb": "",
-                "type": 1,
-                "hashinfo": "null",
-                "hash_info": null
-            },
-            {
-                "name": "视频",
-                "size": 0,
-                "is_dir": true,
-                "modified": "2023-05-29T11:35:52.306943505Z",
-                "created": "2023-05-29T11:35:52.306943505Z",
-                "sign": "",
-                "thumb": "",
-                "type": 1,
-                "hashinfo": "null",
-                "hash_info": null
-            }
-        ],
-        "total": 4,
-        "readme": "",
-        "header": "",
-        "write": true,
-        "provider": "unknown"
-    }
+  "code": 200,
+  "message": "success",
+  "data": {
+    "content": [
+      {
+        "name": "rsl",
+        "size": 0,
+        "is_dir": true,
+        "modified": "2023-05-29T12:06:02.681205251Z",
+        "created": "2023-05-29T12:06:02.681205251Z",
+        "sign": "",
+        "thumb": "",
+        "type": 1,
+        "hashinfo": "null",
+        "hash_info": null
+      },
+      {
+        "name": "个人文档",
+        "size": 0,
+        "is_dir": true,
+        "modified": "2023-03-20T08:21:08.685199689Z",
+        "created": "2023-03-20T08:21:08.685199689Z",
+        "sign": "",
+        "thumb": "",
+        "type": 1,
+        "hashinfo": "null",
+        "hash_info": null
+      },
+      {
+        "name": "储存",
+        "size": 0,
+        "is_dir": true,
+        "modified": "2023-03-27T11:21:11.611159379Z",
+        "created": "2023-03-27T11:21:11.611159379Z",
+        "sign": "",
+        "thumb": "",
+        "type": 1,
+        "hashinfo": "null",
+        "hash_info": null
+      },
+      {
+        "name": "视频",
+        "size": 0,
+        "is_dir": true,
+        "modified": "2023-05-29T11:35:52.306943505Z",
+        "created": "2023-05-29T11:35:52.306943505Z",
+        "sign": "",
+        "thumb": "",
+        "type": 1,
+        "hashinfo": "null",
+        "hash_info": null
+      }
+    ],
+    "total": 4,
+    "readme": "",
+    "header": "",
+    "write": true,
+    "provider": "unknown"
+  }
 }

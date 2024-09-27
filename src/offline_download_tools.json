@@ -1,9 +1,9 @@
 {
-    "code": 200,
-    "message": "success",
-    "data": [
-        "aria2",
-        "SimpleHttp",
-        "qBittorrent"
-    ]
+  "code": 200,
+  "message": "success",
+  "data": [
+    "aria2",
+    "SimpleHttp",
+    "qBittorrent"
+  ]
 }

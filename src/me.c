@@ -84,71 +84,71 @@ const char exp_char[] =
 // }
 
 int main(void) {
-   char user_name[100];
+    char user_name[100];
 
-   char pwd_ts_str[100];
-   // sprintf(pwd_ts_str, "%ld", pwd_ts);
+    char pwd_ts_str[100];
+    // sprintf(pwd_ts_str, "%ld", pwd_ts);
 
-   // struct l8w8jwt_claim claims[2];  // 数据库占位符
-   // claims[0].type = L8W8JWT_CLAIM_TYPE_STRING;
-   // claims[0].key = "username";
-   // claims[0].key_length = strlen("username");
-   // claims[0].value = user_name;
-   // claims[0].value_length = strlen(user_name);
-   // claims[1].type = L8W8JWT_CLAIM_TYPE_INTEGER;
-   // claims[1].key = "pwd_ts";
-   // claims[1].key_length = strlen("pwd_ts");
-   // claims[1].value = pwd_ts_str;
-   // claims[1].value_length = strlen(pwd_ts_str);  // 数据库占位符
+    // struct l8w8jwt_claim claims[2];  // 数据库占位符
+    // claims[0].type = L8W8JWT_CLAIM_TYPE_STRING;
+    // claims[0].key = "username";
+    // claims[0].key_length = strlen("username");
+    // claims[0].value = user_name;
+    // claims[0].value_length = strlen(user_name);
+    // claims[1].type = L8W8JWT_CLAIM_TYPE_INTEGER;
+    // claims[1].key = "pwd_ts";
+    // claims[1].key_length = strlen("pwd_ts");
+    // claims[1].value = pwd_ts_str;
+    // claims[1].value_length = strlen(pwd_ts_str);  // 数据库占位符
 
-   // FILE *fp = fopen("hash.txt", "r");
-   // fseek(fp, 0, SEEK_END);
-   // long int jwt_length = ftell(fp);
-   // fseek(fp, 0, SEEK_SET);
-   // char jwt[jwt_length + 1];
-   // fgets(jwt, jwt_length + 1, fp);
-   // fclose(fp);
+    // FILE *fp = fopen("hash.txt", "r");
+    // fseek(fp, 0, SEEK_END);
+    // long int jwt_length = ftell(fp);
+    // fseek(fp, 0, SEEK_SET);
+    // char jwt[jwt_length + 1];
+    // fgets(jwt, jwt_length + 1, fp);
+    // fclose(fp);
 
-   char jwt[255];
-   strcpy(jwt, getenv("AUTHORIZATION"));
+    char jwt[255];
+    strcpy(jwt, getenv("AUTHORIZATION"));
 
-   fputs(jwt, stderr);
+    fputs(jwt, stderr);
 
-   struct l8w8jwt_claim out_claims[2];
-   struct l8w8jwt_claim *claim = out_claims;
-   if (decode_jwt(jwt, username, pwd_ts, &claim, 2)) {
-      FILE *fp = fopen(settings_conf, "r");
-      if (fp == NULL) {
-         printf("open file error\n");
-         return -1;
-      }
-      printf("Access-Control-Allow-Origin: *\r\n");
+    struct l8w8jwt_claim out_claims[2];
+    struct l8w8jwt_claim *claim = out_claims;
+    if (decode_jwt(jwt, username, pwd_ts, &claim, 2)) {
+        FILE *fp = fopen(settings_conf, "r");
+        if (fp == NULL) {
+            printf("open file error\n");
+            return -1;
+        }
+        printf("Access-Control-Allow-Origin: *\r\n");
 
-      fseek(fp, 0, SEEK_END);
-      long file_size = ftell(fp);
-      fseek(fp, 0, SEEK_SET);
+        fseek(fp, 0, SEEK_END);
+        long file_size = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
 
-      printf("Content-Type: application/json; charset=utf-8\r\n");
-      printf("Content-Length: %ld\r\n", file_size);
-      printf("\r\n");
+        printf("Content-Type: application/json; charset=utf-8\r\n");
+        printf("Content-Length: %ld\r\n", file_size);
+        printf("\r\n");
 
-      int n = 0;
-      char buffer[1024];
-      size_t bytes_read;
-      while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
-         n++;
-         fwrite(buffer, 1, bytes_read, stdout);
-      }
-      fclose(fp);
-   } else {
-      char *error_token =
-          "{\"code\":401,\"message\":\"Guest user is disabled, login "
-          "please\",\"data\":null}";
-      printf("Access-Control-Allow-Origin: *\r\n");
-      printf("Content-Type: application/json; charset=utf-8\r\n");
-      printf("Content-Length: %ld\r\n", strlen(error_token));
-      printf("\r\n");
+        int n = 0;
+        char buffer[1024];
+        size_t bytes_read;
+        while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
+            n++;
+            fwrite(buffer, 1, bytes_read, stdout);
+        }
+        fclose(fp);
+    } else {
+        char *error_token =
+            "{\"code\":401,\"message\":\"Guest user is disabled, login "
+            "please\",\"data\":null}";
+        printf("Access-Control-Allow-Origin: *\r\n");
+        printf("Content-Type: application/json; charset=utf-8\r\n");
+        printf("Content-Length: %ld\r\n", strlen(error_token));
+        printf("\r\n");
 
-      fputs(error_token, stdout);
+        fputs(error_token, stdout);
    }
 }
