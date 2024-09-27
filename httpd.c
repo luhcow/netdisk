@@ -110,7 +110,7 @@ void accept_request(int client) {
     }
     url[i] = '\0';
 
-    urldecode(url); // 解码 url
+    urldecode(url);  // 解码 url
 
     /*处理 GET 方法*/
     if (strcasecmp(method, "GET") == 0) {
@@ -275,7 +275,7 @@ void execute_cgi(int client, const char* path, const char* method,
         }
     } else if (strcasecmp(method, "POST") == 0) {
         /* POST */
-        char* str = NULL; // 找出authorization
+        char* str = NULL;  // 找出authorization
         /* 对 POST 的 HTTP 请求中找出 content_length */
         numchars = get_line(client, buf, sizeof(buf));
         while ((numchars > 0) && strcmp("\n", buf)) {
@@ -288,7 +288,7 @@ void execute_cgi(int client, const char* path, const char* method,
             if (strcasecmp(buf, "Content-Length:") == 0)
                 content_length = atoi(&(buf[16]));
             numchars =
-                get_line(client, buf, sizeof(buf)); // 在这里把头读取完都丢弃了
+                get_line(client, buf, sizeof(buf));  // 在这里把头读取完都丢弃了
         }
         /*没有找到 content_length */
         if (content_length == -1) {
@@ -297,7 +297,7 @@ void execute_cgi(int client, const char* path, const char* method,
             return;
         }
     } else if (strcasecmp(method, "PUT") == 0) {
-        char* str = NULL; // 找出authorization
+        char* str = NULL;  // 找出authorization
         /* 对 POST 的 HTTP 请求中找出 content_length */
         numchars = get_line(client, buf, sizeof(buf));
         while ((numchars > 0) && strcmp("\n", buf)) {
@@ -317,7 +317,7 @@ void execute_cgi(int client, const char* path, const char* method,
             if (strcasecmp(buf, "Content-Length:") == 0)
                 content_length = atoi(&(buf[16]));
             numchars =
-                get_line(client, buf, sizeof(buf)); // 在这里把头读取完都丢弃了
+                get_line(client, buf, sizeof(buf));  // 在这里把头读取完都丢弃了
         }
 
         // fputs(authorization, stderr);
@@ -615,7 +615,7 @@ void execute_cgi(int client, const char* path, const char* method,
      * Parameters: pointer to variable containing the port to connect on
      * Returns: the socket */
     /**********************************************************************/
-    int startup(u_short* port) {
+    int startup(u_short * port) {
         int httpd = 0;
         struct sockaddr_in name;
 
