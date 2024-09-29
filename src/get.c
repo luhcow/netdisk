@@ -73,7 +73,7 @@ int main() {
                            json_object_new_string(ctime(&st.st_mtime)));
     json_object_object_add(data_json, "created",
                            json_object_new_string(ctime(&st.st_ctime)));
-    json_object_object_add(data_json, "sing",
+    json_object_object_add(data_json, "sign",
                            json_object_new_string(""));  // 签名
     json_object_object_add(data_json, "thumb",
                            json_object_new_string(""));  // 缩略图
@@ -104,11 +104,11 @@ int main() {
     printf("Access-Control-Allow-Origin: *\r\n");
     printf("Content-Type: application/json; charset=utf-8\r\n");
     printf("Content-Length: %ld\r\n", strlen(send_data));
-   printf("\r\n");
+    printf("\r\n");
 
-   fputs(send_data, stdout);
+    fputs(send_data, stdout);
 
-   json_object_put(send_json);
+    json_object_put(send_json);
 
-   return 0;
+    return 0;
 }
