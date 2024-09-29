@@ -58,7 +58,7 @@ set_target_properties(form PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ../api/fs/)
 target_link_libraries(form PRIVATE l8w8jwt json-c)
 
-add_executable(remove src/remove.c)
-set_target_properties(form PROPERTIES
+add_executable(remove src/remove.c ./src/authorization.c)
+set_target_properties(remove PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ../api/fs/)
-target_link_libraries(form PRIVATE l8w8jwt json-c)
+target_link_libraries(remove PRIVATE l8w8jwt json-c)

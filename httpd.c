@@ -304,11 +304,12 @@ void execute_cgi(int client, const char* path, const char* method,
             if ((str = strstr(buf, "authorization:")) != NULL) {
                 strcpy(authorization, str + strlen("authorization: "));
             }
-            if ((str = strstr(buf, "content-type:")) != NULL) {
+            if ((str = strstr(buf, "Content-Type:")) != NULL) {
                 strcpy(content_type, str + strlen("content-type: "));
             }
             if ((str = strstr(buf, "file-path:")) != NULL) {
-                urldecode(file_path);
+                urldecode(buf);
+                *(strchr(buf, '\n')) = '\0';
                 strcpy(file_path, str + strlen("file-path: "));
             }
             /*利用 \0 进行分隔 */
@@ -319,101 +320,105 @@ void execute_cgi(int client, const char* path, const char* method,
             numchars =
                 get_line(client, buf, sizeof(buf));  // 在这里把头读取完都丢弃了
         }
+    }
 
-        // fputs(authorization, stderr);
+    // fputs(authorization, stderr);
 
-        /* 正确，HTTP 状态码 200 */
-        sprintf(buf, "HTTP/1.0 200 OK\r\n");
-        send(client, buf, strlen(buf), 0);
+    /* 正确，HTTP 状态码 200 */
+    sprintf(buf, "HTTP/1.0 200 OK\r\n");
+    send(client, buf, strlen(buf), 0);
 
-        /* 建立管道*/
-        if (pipe(cgi_output) < 0) {
-            /*错误处理*/
-            cannot_execute(client);
-            return;
-        }
-        /*建立管道*/
-        if (pipe(cgi_input) < 0) {
-            /*错误处理*/
-            cannot_execute(client);
-            return;
-        }
+    /* 建立管道*/
+    if (pipe(cgi_output) < 0) {
+        /*错误处理*/
+        cannot_execute(client);
+        return;
+    }
+    /*建立管道*/
+    if (pipe(cgi_input) < 0) {
+        /*错误处理*/
+        cannot_execute(client);
+        return;
+    }
 
-        if ((pid = fork()) < 0) {
-            /*错误处理*/
-            cannot_execute(client);
-            return;
-        }
-        if (pid == 0) {
-            /* child: CGI script */
-            char meth_env[255];
-            char length_env[255];
-            char path_env[255];
-            char authorization_env[2048];
+    if ((pid = fork()) < 0) {
+        /*错误处理*/
+        cannot_execute(client);
+        return;
+    }
+    if (pid == 0) {
+        /* child: CGI script */
+        char meth_env[255];
+        char length_env[255];
+        char path_env[255];
+        char authorization_env[2048];
 
-            /* 把 STDOUT 重定向到 cgi_output 的写入端 */
-            dup2(cgi_output[1], 1);
-            /* 把 STDIN 重定向到 cgi_input 的读取端 */
-            dup2(cgi_input[0], 0);
-            /* 关闭 cgi_input 的写入端 和 cgi_output 的读取端 */
-            close(cgi_output[0]);
-            close(cgi_input[1]);
-            /*设置 request_method 的环境变量*/
-            sprintf(meth_env, "REQUEST_METHOD=%s", method);
-            sprintf(path_env, "URL_PATH=%s", path);
-            sprintf(authorization_env, "AUTHORIZATION=%s", authorization);
-            putenv(meth_env);
+        /* 把 STDOUT 重定向到 cgi_output 的写入端 */
+        dup2(cgi_output[1], 1);
+        /* 把 STDIN 重定向到 cgi_input 的读取端 */
+        dup2(cgi_input[0], 0);
+        /* 关闭 cgi_input 的写入端 和 cgi_output 的读取端 */
+        close(cgi_output[0]);
+        close(cgi_input[1]);
+        /*设置 request_method 的环境变量*/
+        sprintf(meth_env, "REQUEST_METHOD=%s", method);
+        sprintf(path_env, "URL_PATH=%s", path);
+        sprintf(authorization_env, "AUTHORIZATION=%s", authorization);
+        putenv(meth_env);
+        putenv(path_env);
+        putenv(authorization_env);
+        // putenv(path);
+        if (strcasecmp(method, "GET") == 0) {
+            char query_env[255];
+            /*设置 query_string 的环境变量*/
+            sprintf(query_env, "QUERY_STRING=%s", query_string);
+            putenv(query_env);
+        } else if (strcasecmp(method, "POST") == 0) {
+            /* POST */
+            /*设置 content_length 的环境变量*/
+            sprintf(length_env, "CONTENT_LENGTH=%d", content_length);
+            putenv(length_env);
+        } else if (strcasecmp(method, "PUT") == 0) {
+            sprintf(length_env, "CONTENT_LENGTH=%d", content_length);
+            putenv(length_env);
+            char type_env[1024];
+            char path_env[1024];
+            sprintf(type_env, "CONTENT_TYPE=%s", content_type);
+            putenv(type_env);
+            sprintf(path_env, "FILE_PATH=%s", file_path);
             putenv(path_env);
-            putenv(authorization_env);
-            // putenv(path);
-            if (strcasecmp(method, "GET") == 0) {
-                char query_env[255];
-                /*设置 query_string 的环境变量*/
-                sprintf(query_env, "QUERY_STRING=%s", query_string);
-                putenv(query_env);
-            } else if (strcasecmp(method, "POST") == 0) {
-                /* POST */
-                /*设置 content_length 的环境变量*/
-                sprintf(length_env, "CONTENT_LENGTH=%d", content_length);
-                putenv(length_env);
-            } else if (strcasecmp(method, "PUT") == 0) {
-                sprintf(length_env, "CONTENT_LENGTH=%d", content_length);
-                putenv(length_env);
-                sprintf(content_type, "CONTENT_TYPE=%s", content_type);
-                putenv(content_type);
-                sprintf(file_path, "FILE_PATH=%s", file_path);
-                putenv(file_path);
-            }
-            /*用 execl 运行 cgi 程序*/
-            // 总是运行根目录下的cgi程序
-            // if (strcasecmp(method, "GET") == 0)
-            //     execl("./htdocs/path", path, NULL);
-            // else
-            execl(path, path, NULL);
-            exit(0);
-        } else {
-            /* parent */
-            /* 关闭 cgi_input 的读取端 和 cgi_output 的写入端 */
-            close(cgi_output[1]);
-            close(cgi_input[0]);
-            if (strcasecmp(method, "POST") == 0) /*接收 POST 过来的数据*/
-                for (int i = 0; i < content_length; i++) {
-                    recv(client, &c, 1, 0);
-                    /*把 POST 数据写入 cgi_input，现在重定向到 STDIN */
-                    write(cgi_input[1], &c, 1);
-                }
-            /*读取 cgi_output 的管道输出到客户端，该管道输入是 STDOUT */
-            while (read(cgi_output[0], &c, 1) > 0)
-                send(client, &c, 1, 0);
-
-            /*关闭管道*/
-            close(cgi_output[0]);
-            close(cgi_input[1]);
-            /*等待子进程*/
-            waitpid(pid, &status, 0);
         }
+        /*用 execl 运行 cgi 程序*/
+        // 总是运行根目录下的cgi程序
+        // if (strcasecmp(method, "GET") == 0)
+        //     execl("./htdocs/path", path, NULL);
+        // else
+        execl(path, path, NULL);
+        exit(0);
+    } else {
+        /* parent */
+        /* 关闭 cgi_input 的读取端 和 cgi_output 的写入端 */
+        close(cgi_output[1]);
+        close(cgi_input[0]);
+        if (strcasecmp(method, "POST") == 0 ||
+            strcasecmp(method, "PUT") == 0) /*接收 POST 过来的数据*/
+            for (int i = 0; i < content_length; i++) {
+                recv(client, &c, 1, 0);
+                /*把 POST 数据写入 cgi_input，现在重定向到 STDIN */
+                write(cgi_input[1], &c, 1);
+            }
+        /*读取 cgi_output 的管道输出到客户端，该管道输入是 STDOUT */
+        while (read(cgi_output[0], &c, 1) > 0)
+            send(client, &c, 1, 0);
+
+        /*关闭管道*/
+        close(cgi_output[0]);
+        close(cgi_input[1]);
+        /*等待子进程*/
+        waitpid(pid, &status, 0);
     }
 }
+
 /**********************************************************************/
 /* Get a line from a socket, whether the line ends in a newline,
  * carriage return, or a CRLF combination.  Terminates the string read
@@ -658,43 +663,41 @@ void unimplemented(int client) {
     sprintf(buf, "</TITLE></HEAD>\r\n");
     send(client, buf, strlen(buf), 0);
     sprintf(buf, "<BODY><P>HTTP request method not supported.\r\n");
-        send(client, buf, strlen(buf), 0);
-        sprintf(buf, "</BODY></HTML>\r\n");
-        send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "</BODY></HTML>\r\n");
+    send(client, buf, strlen(buf), 0);
+}
+
+/**********************************************************************/
+
+int main(int argc, char* argv[]) {
+    int server_sock = -1;
+
+    u_short port = 0;
+    if (argc != 1)
+        port = atoi(argv[1]);
+    int client_sock = -1;
+    struct sockaddr_in client_name;
+    int client_name_len = sizeof(client_name);
+    pthread_t newthread;
+
+    /*在对应端口建立 httpd 服务*/
+    server_sock = startup(&port);
+    printf("httpd running on port %d\n", port);
+
+    while (1) {
+        /*套接字收到客户端连接请求*/
+        client_sock = accept(server_sock, (struct sockaddr*)&client_name,
+                             &client_name_len);
+        if (client_sock == -1)
+            error_die("accept");
+        /*派生新线程用 accept_request 函数处理新请求*/
+        /* accept_request(client_sock); */
+        if (pthread_create(&newthread, NULL, accept_request, client_sock) != 0)
+            perror("pthread_create");
     }
 
-    /**********************************************************************/
+    close(server_sock);
 
-    int main(int argc, char* argv[]) {
-        int server_sock = -1;
-
-        u_short port = 0;
-        if (argc != 1)
-            port = atoi(argv[1]);
-        int client_sock = -1;
-        struct sockaddr_in client_name;
-        int client_name_len = sizeof(client_name);
-        pthread_t newthread;
-
-        /*在对应端口建立 httpd 服务*/
-        server_sock = startup(&port);
-        printf("httpd running on port %d\n", port);
-
-        while (1) {
-            /*套接字收到客户端连接请求*/
-            client_sock =
-                accept(server_sock, (struct sockaddr*)&client_name,
-                       &client_name_len);
-            if (client_sock == -1)
-                error_die("accept");
-            /*派生新线程用 accept_request 函数处理新请求*/
-            /* accept_request(client_sock); */
-            if (pthread_create(&newthread, NULL, accept_request, client_sock) !=
-                0)
-                perror("pthread_create");
-        }
-
-        close(server_sock);
-
-        return (0);
-    }
+    return (0);
+}
