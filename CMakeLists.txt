@@ -11,6 +11,7 @@ include_directories(./include)
 # 添加 l8w8jwt 和 json-c 库
 add_subdirectory(./lib/l8w8jwt)
 add_subdirectory(./lib/json-c)
+add_subdirectory(./lib/rabbitmq-c)
 
 # 编译 httpd 可执行文件，并链接 pthread 
 add_executable(httpd httpd.c ./src/urlcode.c)
