@@ -54,7 +54,7 @@ int main() {
     struct json_object* jobj = json_tokener_parse(post_data);
     const char* path =
         json_object_get_string(json_object_object_get(jobj, "path"));
-    char dir_path[4096] = "./htdocs";
+    char dir_path[4096] = "./file";
     strcat(dir_path, path);
 
     struct dirent* entry;
@@ -145,7 +145,7 @@ static int print_list_in_json(char dir_path[], char d_name[]) {
     json_object_object_add(content_json, "hash_info",
                            json_object_new_null());  // TODO 以后开发
 
-   json_object_array_add(content_json_arr, content_json);
+    json_object_array_add(content_json_arr, content_json);
 
-   return 0;
+    return 0;
 }

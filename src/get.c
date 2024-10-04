@@ -50,7 +50,7 @@ int main() {
     struct json_object* jobj = json_tokener_parse(post_data);
     const char* path =
         json_object_get_string(json_object_object_get(jobj, "path"));
-    char dir_path[4096] = "./htdocs";
+    char dir_path[4096] = "./file";
     strcat(dir_path, path);
 
     struct dirent* entry;
