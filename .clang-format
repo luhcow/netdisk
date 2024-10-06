@@ -14,3 +14,4 @@ IndentWidth: 4
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
+ColumnLimit: 70

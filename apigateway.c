@@ -27,6 +27,8 @@
 #include <unistd.h>
 #include <urlcode.h>
 
+#include "authorization.h"
+
 #define ISspace(x) isspace((int)(x))
 
 #define SERVER_STRING "Server: jdbhttpd/0.1.0\r\n"
@@ -47,6 +49,8 @@ void accept_request(int);
 
 void bad_request(int);
 
+char* bad_json(const char*);
+
 void cat(int, FILE*);
 
 // void cannot_execute(int);
@@ -54,6 +58,8 @@ void cat(int, FILE*);
 void error_die(const char*);
 
 int parser(int, const char*, struct http_request*);
+
+char* remote_procedure_call(const char*, struct http_request*);
 
 int get_line(int, char*, int);
 
@@ -68,8 +74,6 @@ void not_found(int);
 int startup(u_short*);
 
 void unimplemented(int);
-
-int remote_procedure_call(const char*, const char*);
 
 /**********************************************************************/
 /* A request has caused a call to accept() on the server port to
@@ -126,7 +130,7 @@ void accept_request(int client) {
     }
     url[i] = '\0';
 
-    urldecode(url);  // 解码 url
+    urldecode(url);  // 解码
 
     /*处理 GET 方法*/
     if (strcasecmp(method, "GET") == 0) {
@@ -143,16 +147,56 @@ void accept_request(int client) {
         }
     }
 
+    struct http_request request;
+    parser(client, method, &request);
+    char* readysend_mess;
+
     //  /api 表示请求了一个 api
     //  /d 只用来下载文件
-    if (strncasecmp("/api", url, 4)) {
+    if (strncasecmp("/api", url, 4) == 0) {
         // TODO
         // api 请求 网关 rpc 后，将数据发送至 client
         // Token 等相关计算都在网关完成
-    } else if (strncasecmp("/d", url, 2)) {
+        if (strncasecmp("/fs", url + 4, 3) == 0) {
+            char* fs_api = url + 4 + 3;
+            // TODO 检查一下请求是否合法
+            // fs 应该都是要检查 token 的
+            if (request.authorization_len == 0 ||
+                request.authorization == NULL) {
+                readysend_mess = bad_json("need login");
+            } else if (!decode_jwt(request.authorization, NULL, 0)) {
+                readysend_mess = bad_json("need login");
+            } else {
+                // 核验一下 token 合法了，愉快开跑
+                // 注意上传也在这里 可能需要特殊处理一下 先按小文件
+                // 直接塞进消息里或者base64
+                readysend_mess = remote_procedure_call(fs_api, &request);
+            }
+            send(client, readysend_mess, strlen(readysend_mess));
+        } else if (strncasecmp("/auth", url + 4, 5) == 0) {
+            char auth_api = url + 4 + 5;
+            // auth 有多种情况，需要分类一下
+            // 先简单分成三类 login admin sign
+            // 但我直接
+            // TODO
+            readysend_mess = remote_procedure_call(auth_api, &request);
+        }
+    } else if (strncasecmp("/d", url, 2) == 0) {
         // TODO
         // 客户端要求下载文件，让客户端去找 fs server 下载
         // 先验证 Token 是否合法，RPC 后将新的请求链接发至客户端
+        char* d_api = url + 2;
+        // TODO 检查一下请求是否合法
+        if (request.authorization_len == 0 || request.authorization == NULL) {
+            readysend_mess = bad_json("need login");
+        } else if (!decode_jwt(request.authorization, NULL, 0)) {
+            readysend_mess = bad_json("need login");
+        } else {
+            // 核验一下 token 合法了，愉快开跑
+            readysend_mess = remote_procedure_call(d_api, &request);
+        }
+        // 这里发的是去哪里下载的 JSON, 上传也可以这么做
+        send(client, readysend_mess, strlen(readysend_mess));
     } else {
         // 啥也不是, 发个 404
         not_found(client);
@@ -198,6 +242,18 @@ void accept_request(int client) {
 
     /*断开与客户端的连接（HTTP 特点：无连接）*/
     close(client);
+}
+
+// 把消息发送到 中间件 然后阻塞等待消息发过来
+// JSON 格式 但是发收都是整个字符串 gateway不解码
+char* remote_procedure_call(const char*, struct http_request*) {
+    // TODO 建立线程池后 到中间件的连接应该在线程建立时就做好
+    // 真正用的时候肯定是要分一个文件的
+
+    // 建立连接
+    // 声明队列
+    // 绑定队列
+    // 断开连接
 }
 
 /**********************************************************************/
