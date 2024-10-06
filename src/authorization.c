@@ -5,8 +5,8 @@
 
 char KEY[] = "iJOIIIJIhidsfioe7837483HUHUHUuhuh";  // 数据库占位符
 
-bool decode_jwt(char JWT[], char user_name[], time_t pwd_ts,
-                struct l8w8jwt_claim **out_claims, int out_calims_length) {
+bool decode_jwt(char JWT[], struct l8w8jwt_claim **out_claims,
+                int out_calims_length) {
     struct l8w8jwt_decoding_params params;
     l8w8jwt_decoding_params_init(&params);
 
@@ -17,9 +17,6 @@ bool decode_jwt(char JWT[], char user_name[], time_t pwd_ts,
 
     params.verification_key = (unsigned char *)KEY;
     params.verification_key_length = strlen(KEY);
-
-    char pwd_ts_str[100];
-    sprintf(pwd_ts_str, "%ld", pwd_ts);
 
     /*
      * Not providing params.validate_iss_length makes it use strlen()
