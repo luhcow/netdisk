@@ -19,7 +19,6 @@
 		"vscode": {
 			"settings": {},
 			"extensions": [
-				"streetsidesoftware.code-spell-checker",
 				"ms-vscode.cpptools-extension-pack",
 				"eamodio.gitlens",
 				"ms-vscode.hexeditor",
