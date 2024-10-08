@@ -31,7 +31,7 @@
 
 #define ISspace(x) isspace((int)(x))
 
-#define SERVER_STRING "Server: jdbhttpd/0.1.0\r\n"
+#define SERVER_STRING "Server: netfile/0.1.0\r\n"
 
 struct http_request {
     char* content_type;
@@ -86,7 +86,8 @@ void accept_request(int client) {
     char url[255];
     char path[512];
     struct stat st;
-    int cgi = 1; /* becomes true if server decides this is a CGI program */
+    int cgi =
+        1; /* becomes true if server decides this is a CGI program */
     char* query_string = NULL;
 
     /*得到请求的第一行*/
@@ -102,10 +103,13 @@ void accept_request(int client) {
     method[i] = '\0';
 
     /*如果既不是 GET 又不是 POST 还不是 ... 则无法处理 */
-    // 这里增加了 PUT 方法，显得有点笨笨的，实际上 POST 带 multipart/form-data
-    // 主体可以增加很多数据 不过 PUT 方法也有自己的优势
-    if (strcasecmp(method, "GET") != 0 && strcasecmp(method, "POST") != 0 &&
-        strcasecmp(method, "OPTIONS") != 0 && strcasecmp(method, "PUT") != 0) {
+    // 这里增加了 PUT 方法，显得有点笨笨的，实际上 POST 带
+    // multipart/form-data 主体可以增加很多数据 不过 PUT
+    // 方法也有自己的优势
+    if (strcasecmp(method, "GET") != 0 &&
+        strcasecmp(method, "POST") != 0 &&
+        strcasecmp(method, "OPTIONS") != 0 &&
+        strcasecmp(method, "PUT") != 0) {
         unimplemented(client);
         return;
     }
@@ -115,14 +119,16 @@ void accept_request(int client) {
         return;
     }
     /* POST PUT 的时候开启 cgi */
-    // if (strcasecmp(method, "POST") == 0 || strcasecmp(method, "PUT") == 0)
+    // if (strcasecmp(method, "POST") == 0 || strcasecmp(method,
+    // "PUT") == 0)
     //     cgi = 1;
 
     /*读取 url 地址*/
     i = 0;
     while (ISspace(buf[j]) && (j < sizeof(buf)))
         j++;
-    while (!ISspace(buf[j]) && (i < sizeof(url) - 1) && (j < sizeof(buf))) {
+    while (!ISspace(buf[j]) && (i < sizeof(url) - 1) &&
+           (j < sizeof(buf))) {
         /*存下 url */
         url[i] = buf[j];
         i++;
@@ -170,7 +176,8 @@ void accept_request(int client) {
                 // 核验一下 token 合法了，愉快开跑
                 // 注意上传也在这里 可能需要特殊处理一下 先按小文件
                 // 直接塞进消息里或者base64
-                readysend_mess = remote_procedure_call(fs_api, &request);
+                readysend_mess =
+                    remote_procedure_call(fs_api, &request);
             }
             send(client, readysend_mess, strlen(readysend_mess));
         } else if (strncasecmp("/auth", url + 4, 5) == 0) {
@@ -179,7 +186,8 @@ void accept_request(int client) {
             // 先简单分成三类 login admin sign
             // 但我直接
             // TODO
-            readysend_mess = remote_procedure_call(auth_api, &request);
+            readysend_mess =
+                remote_procedure_call(auth_api, &request);
         }
     } else if (strncasecmp("/d", url, 2) == 0) {
         // TODO
@@ -187,7 +195,8 @@ void accept_request(int client) {
         // 先验证 Token 是否合法，RPC 后将新的请求链接发至客户端
         char* d_api = url + 2;
         // TODO 检查一下请求是否合法
-        if (request.authorization_len == 0 || request.authorization == NULL) {
+        if (request.authorization_len == 0 ||
+            request.authorization == NULL) {
             readysend_mess = bad_json("need login");
         } else if (!decode_jwt(request.authorization, NULL, 0)) {
             readysend_mess = bad_json("need login");
@@ -295,7 +304,8 @@ void cat(int client, FILE* resource) {
     int n = 0;
     char buffer[1024];
     size_t bytes_read;
-    while ((bytes_read = fread(buffer, 1, sizeof(buffer), resource)) > 0) {
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), resource)) >
+           0) {
         n++;
         send(client, buffer, bytes_read, 0);
     }
@@ -336,7 +346,8 @@ void error_die(const char* sc) {
  * Parameters: client socket descriptor
  *             path to the CGI script */
 /**********************************************************************/
-int parser(int client, const char* method, struct http_request* request) {
+int parser(int client, const char* method,
+           struct http_request* request) {
     char buf[1024];
     // int cgi_output[2];
     // int cgi_input[2];
@@ -357,7 +368,8 @@ int parser(int client, const char* method, struct http_request* request) {
             /* read & discard headers */
             char* str = NULL;
             if ((str = strstr(buf, "Authorization:")) != NULL) {
-                strcpy(authorization, str + strlen("Authorization: "));
+                strcpy(authorization,
+                       str + strlen("Authorization: "));
             }
             numchars = get_line(client, buf, sizeof(buf));
         }
@@ -368,7 +380,8 @@ int parser(int client, const char* method, struct http_request* request) {
         numchars = get_line(client, buf, sizeof(buf));
         while ((numchars > 0) && strcmp("\n", buf)) {
             if ((str = strstr(buf, "Authorization:")) != NULL) {
-                strcpy(authorization, str + strlen("Authorization: "));
+                strcpy(authorization,
+                       str + strlen("Authorization: "));
             }
             /*利用 \0 进行分隔 */
             buf[15] = '\0';
@@ -390,7 +403,8 @@ int parser(int client, const char* method, struct http_request* request) {
         numchars = get_line(client, buf, sizeof(buf));
         while ((numchars > 0) && strcmp("\n", buf)) {
             if ((str = strstr(buf, "Authorization:")) != NULL) {
-                strcpy(authorization, str + strlen("Authorization: "));
+                strcpy(authorization,
+                       str + strlen("Authorization: "));
             }
             if ((str = strstr(buf, "Content-Type:")) != NULL) {
                 strcpy(content_type, str + strlen("content-type: "));
@@ -417,11 +431,14 @@ int parser(int client, const char* method, struct http_request* request) {
     // 组装 request
     // 没有的内容应该会 strlen = 0, 使用前检查 len 即可
     request->authorization_len = strlen(authorization);
-    request->authorization = malloc(request->authorization_len * sizeof(char));
+    request->authorization =
+        malloc(request->authorization_len * sizeof(char));
     request->content_type_len = strlen(content_type);
-    request->content_type = malloc(request->content_type_len * sizeof(char));
+    request->content_type =
+        malloc(request->content_type_len * sizeof(char));
     request->file_path_len = strlen(file_path);
-    request->file_path = malloc(request->file_path_len * sizeof(char));
+    request->file_path =
+        malloc(request->file_path_len * sizeof(char));
     request->content_length = content_length;
     // fputs(authorization, stderr);
 
@@ -460,9 +477,8 @@ int parser(int client, const char* method, struct http_request* request) {
     //     /*设置 request_method 的环境变量*/
     //     sprintf(meth_env, "REQUEST_METHOD=%s", method);
     //     sprintf(path_env, "URL_PATH=%s", path);
-    //     sprintf(authorization_env, "AUTHORIZATION=%s", authorization);
-    //     putenv(meth_env);
-    //     putenv(path_env);
+    //     sprintf(authorization_env, "AUTHORIZATION=%s",
+    //     authorization); putenv(meth_env); putenv(path_env);
     //     putenv(authorization_env);
     //     // putenv(path);
     //     if (strcasecmp(method, "GET") == 0) {
@@ -473,15 +489,13 @@ int parser(int client, const char* method, struct http_request* request) {
     //     } else if (strcasecmp(method, "POST") == 0) {
     //         /* POST */
     //         /*设置 content_length 的环境变量*/
-    //         sprintf(length_env, "CONTENT_LENGTH=%d", content_length);
-    //         putenv(length_env);
+    //         sprintf(length_env, "CONTENT_LENGTH=%d",
+    //         content_length); putenv(length_env);
     //     } else if (strcasecmp(method, "PUT") == 0) {
-    //         sprintf(length_env, "CONTENT_LENGTH=%d", content_length);
-    //         putenv(length_env);
-    //         char type_env[1024];
-    //         char path_env[1024];
-    //         sprintf(type_env, "CONTENT_TYPE=%s", content_type);
-    //         putenv(type_env);
+    //         sprintf(length_env, "CONTENT_LENGTH=%d",
+    //         content_length); putenv(length_env); char
+    //         type_env[1024]; char path_env[1024]; sprintf(type_env,
+    //         "CONTENT_TYPE=%s", content_type); putenv(type_env);
     //         sprintf(path_env, "FILE_PATH=%s", file_path);
     //         putenv(path_env);
     //     }
@@ -590,8 +604,10 @@ void headers(int client, const char* filename, FILE* resource) {
         fseek(resource, 0, SEEK_END);
         long file_size = ftell(resource);
         fseek(resource, 0, SEEK_SET);
-        sprintf(buf, "Content-Disposition: attachment; filename=\"%s\"\r\n",
-                filename);
+        sprintf(
+            buf,
+            "Content-Disposition: attachment; filename=\"%s\"\r\n",
+            filename);
         send(client, buf, strlen(buf), 0);
         sprintf(buf, "Content-Length: %ld\r\n", file_size);
         send(client, buf, strlen(buf), 0);
@@ -640,8 +656,8 @@ void not_found(int client) {
     // send(client, buf, strlen(buf), 0);
     // sprintf(buf, "<BODY><P>The server could not fulfill\r\n");
     // send(client, buf, strlen(buf), 0);
-    // sprintf(buf, "your request because the resource specified\r\n");
-    // send(client, buf, strlen(buf), 0);
+    // sprintf(buf, "your request because the resource
+    // specified\r\n"); send(client, buf, strlen(buf), 0);
     // sprintf(buf, "is unavailable or nonexistent.\r\n");
     // send(client, buf, strlen(buf), 0);
     // sprintf(buf, "</BODY></HTML>\r\n");
@@ -689,7 +705,8 @@ void not_found_debug(int client, const char* path) {
 //     /*读取并丢弃 header */
 //     buf[0] = 'A';
 //     buf[1] = '\0';
-//     while ((numchars > 0) && strcmp("\n", buf)) /* read & discard headers */
+//     while ((numchars > 0) && strcmp("\n", buf)) /* read & discard
+//     headers */
 //         numchars = get_line(client, buf, sizeof(buf));
 
 //     /*打开 sever 的文件*/
@@ -730,7 +747,8 @@ int startup(u_short* port) {
     /*如果当前指定端口是 0，则动态随机分配一个端口*/
     if (*port == 0) {
         int namelen = sizeof(name);
-        if (getsockname(httpd, (struct sockaddr*)&name, &namelen) == -1)
+        if (getsockname(httpd, (struct sockaddr*)&name, &namelen) ==
+            -1)
             error_die("getsockname");
         *port = ntohs(name.sin_port);
     }
@@ -788,13 +806,15 @@ int main(int argc, char* argv[]) {
 
     while (1) {
         /*套接字收到客户端连接请求*/
-        client_sock = accept(server_sock, (struct sockaddr*)&client_name,
-                             &client_name_len);
+        client_sock =
+            accept(server_sock, (struct sockaddr*)&client_name,
+                   &client_name_len);
         if (client_sock == -1)
             error_die("accept");
         /*派生新线程用 accept_request 函数处理新请求*/
         /* accept_request(client_sock); */
-        if (pthread_create(&newthread, NULL, accept_request, client_sock) != 0)
+        if (pthread_create(&newthread, NULL, accept_request,
+                           client_sock) != 0)
             perror("pthread_create");
     }
 
