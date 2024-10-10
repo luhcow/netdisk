@@ -1,7 +1,24 @@
 
 #include "api_gateway.h"
 
-#include "rpc_sending.h"
+#define ISspace(x) isspace((int)(x))
+
+#define SERVER_STRING "Server: netfile/0.1.0\r\n"
+
+typedef struct {
+    char* bytes;
+    long len;
+} http_content_t;
+
+typedef struct {
+    char* content_type;
+    int content_type_len;
+    char* authorization;
+    int authorization_len;
+    char* file_path;
+    int file_path_len;
+    http_content_t content;
+} http_request_t;
 
 /**********************************************************************/
 /* A request has caused a call to accept() on the server port to

@@ -16,12 +16,8 @@
 #include <unistd.h>
 
 #include "authorization.h"
+#include "rpc_sending.h"
 #include "urlcode.h"
-
-#define ISspace(x) isspace((int)(x))
-
-#define SERVER_STRING "Server: netfile/0.1.0\r\n"
-
 typedef struct {
     char* bytes;
     long len;
@@ -51,7 +47,7 @@ void error_die(const char*);
 
 int parser(int, const char*, http_request_t*);
 
-char* remote_procedure_call(const char*, http_request_t*);
+http_content_t remote_procedure_call(const char*, http_request_t*);
 
 int get_line(int, char*, int);
 
