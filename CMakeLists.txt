@@ -17,7 +17,7 @@ add_subdirectory(./lib/rabbitmq-c)
 add_executable(api_gateway src/api_gateway/api_gateway.c ./src/urlcode.c src/api_gateway/rpc_sending.c src/authorization.c)
 set_target_properties(api_gateway PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ../)
-target_link_libraries(api_gateway pthread l8w8jwt json-c)
+target_link_libraries(api_gateway PRIVATE pthread l8w8jwt)
 
 
 # # 编译 settings，输出到特定路径

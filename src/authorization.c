@@ -39,8 +39,9 @@ bool decode_jwt(char JWT[], struct l8w8jwt_claim **out_claims,
     enum l8w8jwt_validation_result validation_result;
 
     size_t out_claims_length = 2;
-    int decode_result = l8w8jwt_decode(&params, &validation_result,
-                                       out_claims, out_calims_length);
+    int decode_result =
+        l8w8jwt_decode(&params, &validation_result, out_claims,
+                       (size_t *)out_calims_length);
 
     if (decode_result == L8W8JWT_SUCCESS &&
         validation_result == L8W8JWT_VALID) {
