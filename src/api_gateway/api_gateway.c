@@ -5,21 +5,6 @@
 
 #define SERVER_STRING "Server: netfile/0.1.0\r\n"
 
-typedef struct {
-    char* bytes;
-    long len;
-} http_content_t;
-
-typedef struct {
-    char* content_type;
-    int content_type_len;
-    char* authorization;
-    int authorization_len;
-    char* file_path;
-    int file_path_len;
-    http_content_t content;
-} http_request_t;
-
 /**********************************************************************/
 /* A request has caused a call to accept() on the server port to
  * return.  Process the request appropriately.
@@ -120,7 +105,7 @@ void accept_request(int client) {
             }
             send(client, readysend_mess.bytes, readysend_mess.len, 0);
         } else if (strncasecmp("/auth", url + 4, 5) == 0) {
-            char auth_api = url + 4 + 5;
+            char* auth_api = url + 4 + 5;
             // auth 有多种情况，需要分类一下
             // 先简单分成三类 login admin sign
             // 但我直接
@@ -160,11 +145,11 @@ void accept_request(int client) {
 // 把消息发送到 中间件 然后阻塞等待消息发过来
 // JSON 格式 但是发收都是整个字符串 gateway不解码
 http_content_t remote_procedure_call(const char* api,
-                                     struct http_request* message) {
+                                     http_request_t* message) {
     // TODO 建立线程池后 到中间件的连接应该在线程建立时就做好
     // 真正用的时候肯定是要分一个文件的
     const char* hostname = "http://52.77.251.3/";
-    const char* port = "5672";
+    const int port = 5672;
     const char* vhost = "/";
     const amqp_channel_t channel = 1;
     // 建立连接
@@ -179,11 +164,11 @@ http_content_t remote_procedure_call(const char* api,
 
     char routing_key[strlen(api) + 1];
     strcpy(routing_key, api);
-    int temp;
+    char* temp;
     while ((temp = strchr(routing_key, '/')) != NULL)
-        temp = '.';
+        *temp = '.';
     rabbitmq_rpc_publish(conn, channel, exchange, reply_to,
-                         routing_key, message);
+                         routing_key, message->content.bytes);
 
     amqp_bytes_t answer =
         rabbitmq_rpc_wait_answer(conn, channel, reply_to);
@@ -249,6 +234,27 @@ void error_die(const char* sc) {
     /*出错信息处理 */
     perror(sc);
     exit(1);
+}
+
+char* bad_json(const char* mess) {
+    char error_token[60];
+    sprintf(error_token,
+            "{\"code\":401,\"message\":\"%s\",\"data\":null}", mess);
+
+    printf("Access-Control-Allow-Origin: *\r\n");
+    printf("Content-Type: application/json; charset=utf-8\r\n");
+    printf("Content-Length: %ld\r\n", strlen(error_token));
+    printf("\r\n");
+    char temp[255];
+    sprintf(temp,
+            "%sAccess-Control-Allow-Origin: *\r\nContent-Type: "
+            "application/json; charset=utf-8\r\nContent-Length: "
+            "%ld\r\n\r\n",
+            error_token, strlen(error_token));
+
+    char* re_str = malloc((strlen(temp) + 1) * sizeof(char));
+    strncpy(re_str, temp, (strlen(temp) + 1));
+    return re_str;
 }
 
 /**********************************************************************/
@@ -602,7 +608,8 @@ int main(int argc, char* argv[]) {
             error_die("accept");
         /*派生新线程用 accept_request 函数处理新请求*/
         /* accept_request(client_sock); */
-        if (pthread_create(&newthread, NULL, accept_request,
+        if (pthread_create(&newthread, NULL,
+                           (void* (*)(void*))accept_request,
                            client_sock) != 0)
             perror("pthread_create");
     }
