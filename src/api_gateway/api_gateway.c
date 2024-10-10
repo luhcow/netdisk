@@ -14,8 +14,6 @@ void accept_request(int client) {
     char url[255];
     char path[512];
     struct stat st;
-    int cgi =
-        1; /* becomes true if server decides this is a CGI program */
     char* query_string = NULL;
 
     /*得到请求的第一行*/
@@ -30,7 +28,7 @@ void accept_request(int client) {
     }
     method[i] = '\0';
 
-    /*如果既不是 GET 又不是 POST 还不是 ... 则无法处理 */
+    // 如果既不是 GET 又不是 POST 还不是 ... 则无法处理
     // 这里增加了 PUT 方法，显得有点笨笨的，实际上 POST 带
     // multipart/form-data 主体可以增加很多数据 不过 PUT
     // 方法也有自己的优势
@@ -46,10 +44,6 @@ void accept_request(int client) {
         headers_204(client, path);
         return;
     }
-    /* POST PUT 的时候开启 cgi */
-    // if (strcasecmp(method, "POST") == 0 || strcasecmp(method,
-    // "PUT") == 0)
-    //     cgi = 1;
 
     /*读取 url 地址*/
     i = 0;
@@ -74,8 +68,6 @@ void accept_request(int client) {
             query_string++;
         /* GET 方法特点，? 后面为参数*/
         if (*query_string == '?') {
-            // /*开启 cgi */
-            // cgi = 1;
             *query_string = '\0';
             query_string++;
         }
@@ -143,44 +135,6 @@ void accept_request(int client) {
         // 啥也不是, 发个 404
         not_found(client);
     }
-    // sprintf(path, ".%s", url);
-    // /*默认情况为 index.html-->为路径交付cgi */
-    // if (path[strlen(path) - 1] == '/') {
-    //     cgi = 1;
-    //     // strcat(path, "index.html");
-    // }
-    // 三个 api auth fs public
-    // auth 递送到 auth
-    // public 自行处理
-    // fs 递送到 fs
-
-    /*根据路径找到对应文件 */
-    // if (stat(path, &st) == -1 && strcasecmp(method, "POST") != 0) {
-    //     /*把所有 headers 的信息都丢弃*/
-    //     while ((numchars > 0) && strcmp("\n", buf) != 0)
-    //         /* read & discard headers */
-    //         numchars = get_line(client, buf, sizeof(buf));
-    //     /*回应客户端找不到*/
-    //     not_found(client);
-    // } else {
-    //     /*如果是个目录，则默认使用该目录下 index.html
-    //      * 文件-->交付CGI处理*-->发送index.html-->交付CGI处理*/
-    //     // 判断是否为目录
-    //     // if (S_ISDIR(st.st_mode)) {
-    //     //     cgi = 1; // 目录交给 CGI 处理
-    //     // } else if (!cgi && !S_ISDIR(st.st_mode)) {
-    //     //     cgi = 1;
-    //     // } else if (strcasecmp(method, "POST") == 0) {
-    //     //     cgi = 1;
-    //     // }
-    //     if (!cgi) {
-    //         if (S_ISDIR(st.st_mode))
-    //             serve_file(client, "./htdocs/index.html");
-    //         else
-    //             serve_file(client, path);
-    //     } else
-    //         parser(client, path, method, query_string);
-    // }
 
     /*断开与客户端的连接（HTTP 特点：无连接）*/
     close(client);
@@ -259,14 +213,6 @@ void bad_request(int client) {
  *             FILE pointer for the file to cat */
 /**********************************************************************/
 void cat(int client, FILE* resource) {
-    /*读取文件中的所有数据写到 socket */
-    // char buf[1024]; // 3MB 缓冲区
-    // size_t bytes_read;
-
-    // while ((bytes_read = fread(buf, 1, sizeof(buf), resource)) > 0)
-    // {
-    //     send(client, buf, bytes_read, 0);
-    // }
     int n = 0;
     char buffer[1024];
     size_t bytes_read;
@@ -276,24 +222,6 @@ void cat(int client, FILE* resource) {
         send(client, buffer, bytes_read, 0);
     }
 }
-
-/**********************************************************************/
-/* Inform the client that a CGI script could not be executed.
- * Parameter: the client socket descriptor. */
-/**********************************************************************/
-// void cannot_execute(int client) {
-//     char buf[1024];
-
-//     /* 回应客户端 cgi 无法执行*/
-//     sprintf(buf, "HTTP/1.0 500 Internal Server Error\r\n");
-//     send(client, buf, strlen(buf), 0);
-//     sprintf(buf, "Content-type: text/html\r\n");
-//     send(client, buf, strlen(buf), 0);
-//     sprintf(buf, "\r\n");
-//     send(client, buf, strlen(buf), 0);
-//     sprintf(buf, "<P>Error prohibited CGI execution.\r\n");
-//     send(client, buf, strlen(buf), 0);
-// }
 
 /**********************************************************************/
 /* Print out an error message with perror() (for system errors; based
@@ -538,16 +466,6 @@ void not_found(int client) {
     FILE* not_found_html = fopen("./htdocs/404.html", "r");
     cat(client, not_found_html);
     fclose(not_found_html);
-    // sprintf(buf, "<HTML><TITLE>Not Found</TITLE>\r\n");
-    // send(client, buf, strlen(buf), 0);
-    // sprintf(buf, "<BODY><P>The server could not fulfill\r\n");
-    // send(client, buf, strlen(buf), 0);
-    // sprintf(buf, "your request because the resource
-    // specified\r\n"); send(client, buf, strlen(buf), 0);
-    // sprintf(buf, "is unavailable or nonexistent.\r\n");
-    // send(client, buf, strlen(buf), 0);
-    // sprintf(buf, "</BODY></HTML>\r\n");
-    // send(client, buf, strlen(buf), 0);
 }
 
 void not_found_debug(int client, const char* path) {
@@ -575,38 +493,6 @@ void not_found_debug(int client, const char* path) {
     sprintf(buf, "</BODY></HTML>\r\n");
     send(client, buf, strlen(buf), 0);
 }
-
-/**********************************************************************/
-/* Send a regular file to the client.  Use headers, and report
- * errors to client if they occur.
- * Parameters: a pointer to a file structure produced from the socket
- *              file descriptor
- *             the name of the file to serve */
-/**********************************************************************/
-// void serve_file(int client, const char* filename) {
-//     FILE* resource = NULL;
-//     int numchars = 1;
-//     char buf[1024];
-
-//     /*读取并丢弃 header */
-//     buf[0] = 'A';
-//     buf[1] = '\0';
-//     while ((numchars > 0) && strcmp("\n", buf)) /* read & discard
-//     headers */
-//         numchars = get_line(client, buf, sizeof(buf));
-
-//     /*打开 sever 的文件*/
-//     resource = fopen(filename, "r");
-//     if (resource == NULL)
-//         not_found(client);
-//     else {
-//         /*写 HTTP header */
-//         headers(client, filename, resource);
-//         /*复制文件*/
-//         cat(client, resource);
-//     }
-//     fclose(resource);
-// }
 
 /**********************************************************************/
 /* This function starts the process of listening for web connections
