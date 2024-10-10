@@ -18,12 +18,13 @@
 #include "authorization.h"
 #include "rpc_sending.h"
 #include "urlcode.h"
-typedef struct {
+
+typedef struct http_content_t_ {
     char* bytes;
     long len;
 } http_content_t;
 
-typedef struct {
+typedef struct http_request_t_ {
     char* content_type;
     int content_type_len;
     char* authorization;

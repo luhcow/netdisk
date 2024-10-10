@@ -13,11 +13,11 @@ add_subdirectory(./lib/l8w8jwt)
 add_subdirectory(./lib/json-c)
 add_subdirectory(./lib/rabbitmq-c)
 
-# 编译 httpd 可执行文件，并链接 pthread 
-add_executable(api_gateway src/api_gateway/api_gateway.c ./src/urlcode.c src/api_gateway/rpc_sending.c src/authorization.c)
+# 编译 api_gateway 可执行文件，并链接 pthread l8w8jwt rabbitmq::rabbitmq
+add_executable(api_gateway src/api_gateway/api_gateway.c ./src/urlcode.c src/api_gateway/rpc_sending.c src/authorization.c src/utils.c)
 set_target_properties(api_gateway PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ../)
-target_link_libraries(api_gateway PRIVATE pthread l8w8jwt)
+target_link_libraries(api_gateway PRIVATE pthread l8w8jwt rabbitmq::rabbitmq)
 
 
 # # 编译 settings，输出到特定路径
