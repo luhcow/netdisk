@@ -1,79 +1,7 @@
-/* J. David's webserver */
-/* This is a simple webserver.
- * Created November 1999 by J. David Blackstone.
- * CSE 4344 (Network concepts), Prof. Zeigler
- * University of Texas at Arlington
- */
-/* This program compiles for Sparc Solaris 2.6.
- * To compile for Linux:
- *  1) Comment out the #include <pthread.h> line.
- *  2) Comment out the line that defines the variable newthread.
- *  3) Comment out the two lines that run pthread_create().
- *  4) Uncomment the line that runs accept_request().
- *  5) Remove -lsocket from the Makefile.
- */
-#include <arpa/inet.h>
-#include <ctype.h>
-#include <netinet/in.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <urlcode.h>
 
-#include "authorization.h"
+#include "api_gateway.h"
 
-#define ISspace(x) isspace((int)(x))
-
-#define SERVER_STRING "Server: netfile/0.1.0\r\n"
-
-struct http_request {
-    char* content_type;
-    int content_type_len;
-    char* authorization;
-    int authorization_len;
-    char* file_path;
-    int file_path_len;
-    char* content;
-    long content_length;
-
-}
-
-void accept_request(int);
-
-void bad_request(int);
-
-char* bad_json(const char*);
-
-void cat(int, FILE*);
-
-// void cannot_execute(int);
-
-void error_die(const char*);
-
-int parser(int, const char*, struct http_request*);
-
-char* remote_procedure_call(const char*, struct http_request*);
-
-int get_line(int, char*, int);
-
-void headers(int, const char*, FILE* resource);
-
-void headers_204(int, const char*);
-
-void not_found(int);
-
-// void serve_file(int, const char*);
-
-int startup(u_short*);
-
-void unimplemented(int);
+#include "rpc_sending.h"
 
 /**********************************************************************/
 /* A request has caused a call to accept() on the server port to
@@ -153,9 +81,9 @@ void accept_request(int client) {
         }
     }
 
-    struct http_request request;
+    http_request_t request;
     parser(client, method, &request);
-    char* readysend_mess;
+    http_content_t readysend_mess;
 
     //  /api 表示请求了一个 api
     //  /d 只用来下载文件
@@ -169,9 +97,11 @@ void accept_request(int client) {
             // fs 应该都是要检查 token 的
             if (request.authorization_len == 0 ||
                 request.authorization == NULL) {
-                readysend_mess = bad_json("need login");
+                readysend_mess.bytes = bad_json("need login");
+                readysend_mess.len = strlen(readysend_mess.bytes);
             } else if (!decode_jwt(request.authorization, NULL, 0)) {
-                readysend_mess = bad_json("need login");
+                readysend_mess.bytes = bad_json("need login");
+                readysend_mess.len = strlen(readysend_mess.bytes);
             } else {
                 // 核验一下 token 合法了，愉快开跑
                 // 注意上传也在这里 可能需要特殊处理一下 先按小文件
@@ -179,7 +109,7 @@ void accept_request(int client) {
                 readysend_mess =
                     remote_procedure_call(fs_api, &request);
             }
-            send(client, readysend_mess, strlen(readysend_mess));
+            send(client, readysend_mess.bytes, readysend_mess.len, 0);
         } else if (strncasecmp("/auth", url + 4, 5) == 0) {
             char auth_api = url + 4 + 5;
             // auth 有多种情况，需要分类一下
@@ -188,6 +118,7 @@ void accept_request(int client) {
             // TODO
             readysend_mess =
                 remote_procedure_call(auth_api, &request);
+            send(client, readysend_mess.bytes, readysend_mess.len, 0);
         }
     } else if (strncasecmp("/d", url, 2) == 0) {
         // TODO
@@ -197,15 +128,17 @@ void accept_request(int client) {
         // TODO 检查一下请求是否合法
         if (request.authorization_len == 0 ||
             request.authorization == NULL) {
-            readysend_mess = bad_json("need login");
+            readysend_mess.bytes = bad_json("need login");
+            readysend_mess.len = strlen(readysend_mess.bytes);
         } else if (!decode_jwt(request.authorization, NULL, 0)) {
-            readysend_mess = bad_json("need login");
+            readysend_mess.bytes = bad_json("need login");
+            readysend_mess.len = strlen(readysend_mess.bytes);
         } else {
             // 核验一下 token 合法了，愉快开跑
             readysend_mess = remote_procedure_call(d_api, &request);
         }
         // 这里发的是去哪里下载的 JSON, 上传也可以这么做
-        send(client, readysend_mess, strlen(readysend_mess));
+        send(client, readysend_mess.bytes, readysend_mess.len, 0);
     } else {
         // 啥也不是, 发个 404
         not_found(client);
@@ -255,14 +188,47 @@ void accept_request(int client) {
 
 // 把消息发送到 中间件 然后阻塞等待消息发过来
 // JSON 格式 但是发收都是整个字符串 gateway不解码
-char* remote_procedure_call(const char*, struct http_request*) {
+http_content_t remote_procedure_call(const char* api,
+                                     struct http_request* message) {
     // TODO 建立线程池后 到中间件的连接应该在线程建立时就做好
     // 真正用的时候肯定是要分一个文件的
-
+    const char* hostname = "http://52.77.251.3/";
+    const char* port = "5672";
+    const char* vhost = "/";
+    const amqp_channel_t channel = 1;
     // 建立连接
+    amqp_connection_state_t conn =
+        rabbitmq_connect_server(hostname, port, vhost, channel);
+
     // 声明队列
-    // 绑定队列
+    const char* exchange = "gateway";
+    const char* exchange_type = "topic";
+    amqp_bytes_t reply_to = rabbitmq_rpc_publisher_declare(
+        conn, channel, exchange, exchange_type);
+
+    char routing_key[strlen(api) + 1];
+    strcpy(routing_key, api);
+    int temp;
+    while ((temp = strchr(routing_key, '/')) != NULL)
+        temp = '.';
+    rabbitmq_rpc_publish(conn, channel, exchange, reply_to,
+                         routing_key, message);
+
+    amqp_bytes_t answer =
+        rabbitmq_rpc_wait_answer(conn, channel, reply_to);
+
     // 断开连接
+    rabbitmq_close(conn, channel);
+
+    http_content_t body;
+    body.bytes = malloc(answer.len * sizeof(char));
+    body.len = answer.len;
+    strncpy(body.bytes, answer.bytes, body.len);
+
+    amqp_bytes_free(answer);
+    amqp_bytes_free(reply_to);
+
+    return body;
 }
 
 /**********************************************************************/
@@ -346,8 +312,7 @@ void error_die(const char* sc) {
  * Parameters: client socket descriptor
  *             path to the CGI script */
 /**********************************************************************/
-int parser(int client, const char* method,
-           struct http_request* request) {
+int parser(int client, const char* method, http_request_t* request) {
     char buf[1024];
     // int cgi_output[2];
     // int cgi_input[2];
@@ -439,92 +404,13 @@ int parser(int client, const char* method,
     request->file_path_len = strlen(file_path);
     request->file_path =
         malloc(request->file_path_len * sizeof(char));
-    request->content_length = content_length;
-    // fputs(authorization, stderr);
+    request->content.len = content_length;
+    request->content.bytes = malloc(content_length * sizeof(char));
 
-    // /* 建立管道*/
-    // if (pipe(cgi_output) < 0) {
-    //     /*错误处理*/
-    //     cannot_execute(client);
-    //     return;
-    // }
-    // /*建立管道*/
-    // if (pipe(cgi_input) < 0) {
-    //     /*错误处理*/
-    //     cannot_execute(client);
-    //     return;
-    // }
-
-    // if ((pid = fork()) < 0) {
-    //     /*错误处理*/
-    //     cannot_execute(client);
-    //     return;
-    // }
-    // if (pid == 0) {
-    //     /* child: CGI script */
-    //     char meth_env[255];
-    //     char length_env[255];
-    //     char path_env[255];
-    //     char authorization_env[2048];
-
-    //     /* 把 STDOUT 重定向到 cgi_output 的写入端 */
-    //     dup2(cgi_output[1], 1);
-    //     /* 把 STDIN 重定向到 cgi_input 的读取端 */
-    //     dup2(cgi_input[0], 0);
-    //     /* 关闭 cgi_input 的写入端 和 cgi_output 的读取端 */
-    //     close(cgi_output[0]);
-    //     close(cgi_input[1]);
-    //     /*设置 request_method 的环境变量*/
-    //     sprintf(meth_env, "REQUEST_METHOD=%s", method);
-    //     sprintf(path_env, "URL_PATH=%s", path);
-    //     sprintf(authorization_env, "AUTHORIZATION=%s",
-    //     authorization); putenv(meth_env); putenv(path_env);
-    //     putenv(authorization_env);
-    //     // putenv(path);
-    //     if (strcasecmp(method, "GET") == 0) {
-    //         char query_env[255];
-    //         /*设置 query_string 的环境变量*/
-    //         sprintf(query_env, "QUERY_STRING=%s", query_string);
-    //         putenv(query_env);
-    //     } else if (strcasecmp(method, "POST") == 0) {
-    //         /* POST */
-    //         /*设置 content_length 的环境变量*/
-    //         sprintf(length_env, "CONTENT_LENGTH=%d",
-    //         content_length); putenv(length_env);
-    //     } else if (strcasecmp(method, "PUT") == 0) {
-    //         sprintf(length_env, "CONTENT_LENGTH=%d",
-    //         content_length); putenv(length_env); char
-    //         type_env[1024]; char path_env[1024]; sprintf(type_env,
-    //         "CONTENT_TYPE=%s", content_type); putenv(type_env);
-    //         sprintf(path_env, "FILE_PATH=%s", file_path);
-    //         putenv(path_env);
-    //     }
-    //     /*用 execl 运行 cgi 程序*/
-    //     // 总是运行根目录下的cgi程序
-    //     // if (strcasecmp(method, "GET") == 0)
-    //     //     execl("./htdocs/path", path, NULL);
-    //     // else
-    //     execl(path, path, NULL);
-    //     exit(0);
-    // } else {
-    //     /* parent */
-    //     /* 关闭 cgi_input 的读取端 和 cgi_output 的写入端 */
-    //     close(cgi_output[1]);
-    //     close(cgi_input[0]);
-    request->content = malloc(content_length * sizeof(char));
     if (strcasecmp(method, "POST") == 0 ||
         strcasecmp(method, "PUT") == 0) /*接收 POST 过来的数据*/
         recv(client, &request->content, content_length, 0);
     // TODO: 错误处理
-
-    /*读取 cgi_output 的管道输出到客户端，该管道输入是 STDOUT */
-
-    //     /*关闭管道*/
-    //     close(cgi_output[0]);
-    //     close(cgi_input[1]);
-    //     /*等待子进程*/
-    //     waitpid(pid, &status, 0);
-    // }
 
     /* 正确，HTTP 状态码 200 */
     // 发送的请求正确就应该回复 200 OK 出现错误在 消息主体 中报告

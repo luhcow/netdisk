@@ -39,7 +39,7 @@ amqp_bytes_t rabbitmq_rpc_publisher_declare(
         amqp_cstring_bytes(type), 0, 1, 0, 0, amqp_empty_table);
     die_on_amqp_error(amqp_get_rpc_reply(conn), "Declaring exchange");
 
-    return amqp_empty_bytes;
+    // return amqp_empty_bytes;
     // create private reply_to queue
     {
         amqp_queue_declare_ok_t *r =
@@ -200,7 +200,15 @@ amqp_bytes_t rabbitmq_rpc_wait_answer(amqp_connection_state_t conn,
 
                 /* everything was fine, we can quit now
                  * because we received the reply */
-                return frame.payload.body_fragment;
+                amqp_bytes_t answer = amqp_bytes_malloc_dup(
+                    frame.payload.body_fragment);
+                if (answer.bytes == NULL) {
+                    fprintf(stderr,
+                            "Out of memory while copying queue name");
+                    return amqp_empty_bytes;
+                }
+                amqp_bytes_free(frame.payload.body_fragment);
+                return answer;
                 break;
             }
         }
