@@ -207,6 +207,7 @@ amqp_bytes_t rabbitmq_rpc_wait_answer(amqp_connection_state_t conn,
                             "Out of memory while copying queue name");
                     return amqp_empty_bytes;
                 }
+                // TODO Warning 可能的内存泄露 查阅文档以确认问题
                 // amqp_bytes_free(frame.payload.body_fragment);
                 return answer;
                 break;
