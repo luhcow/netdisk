@@ -207,7 +207,7 @@ amqp_bytes_t rabbitmq_rpc_wait_answer(amqp_connection_state_t conn,
                             "Out of memory while copying queue name");
                     return amqp_empty_bytes;
                 }
-                amqp_bytes_free(frame.payload.body_fragment);
+                // amqp_bytes_free(frame.payload.body_fragment);
                 return answer;
                 break;
             }
