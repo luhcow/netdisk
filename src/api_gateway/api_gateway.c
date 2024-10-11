@@ -5,6 +5,8 @@
 
 #define SERVER_STRING "Server: netfile/0.1.0\r\n"
 
+void headers_json(int client, long len);
+
 /**********************************************************************/
 /* A request has caused a call to accept() on the server port to
  * return.  Process the request appropriately.
@@ -86,7 +88,7 @@ void accept_request(int client) {
         // api 请求 网关 rpc 后，将数据发送至 client
         // Token 等相关计算都在网关完成
         if (strncasecmp("/fs", url + 4, 3) == 0) {
-            char* fs_api = url + 4 + 3;
+            char* fs_api = url + 4 + 1;
             // TODO 检查一下请求是否合法
             // fs 应该都是要检查 token 的
             if (request.authorization_len == 0 ||
@@ -103,22 +105,24 @@ void accept_request(int client) {
                 readysend_mess =
                     remote_procedure_call(fs_api, &request);
             }
+            headers_json(client, readysend_mess.len);
             send(client, readysend_mess.bytes, readysend_mess.len, 0);
         } else if (strncasecmp("/auth", url + 4, 5) == 0) {
-            char* auth_api = url + 4 + 5;
+            char* auth_api = url + 4 + 1;
             // auth 有多种情况，需要分类一下
             // 先简单分成三类 login admin sign
             // 但我直接
             // TODO
             readysend_mess =
                 remote_procedure_call(auth_api, &request);
+            headers_json(client, readysend_mess.len);
             send(client, readysend_mess.bytes, readysend_mess.len, 0);
         }
     } else if (strncasecmp("/d", url, 2) == 0) {
         // TODO
         // 客户端要求下载文件，让客户端去找 fs server 下载
         // 先验证 Token 是否合法，RPC 后将新的请求链接发至客户端
-        char* d_api = url + 2;
+        char* d_api = url + 1;
         // TODO 检查一下请求是否合法
         if (request.authorization_len == 0 ||
             request.authorization == NULL) {
@@ -132,6 +136,7 @@ void accept_request(int client) {
             readysend_mess = remote_procedure_call(d_api, &request);
         }
         // 这里发的是去哪里下载的 JSON, 上传也可以这么做
+        headers_json(client, readysend_mess.len);
         send(client, readysend_mess.bytes, readysend_mess.len, 0);
     } else {
         // 啥也不是, 发个 404
@@ -148,7 +153,7 @@ http_content_t remote_procedure_call(const char* api,
                                      http_request_t* message) {
     // TODO 建立线程池后 到中间件的连接应该在线程建立时就做好
     // 真正用的时候肯定是要分一个文件的
-    const char* hostname = "http://52.77.251.3/";
+    const char* hostname = "52.77.251.3";
     const int port = 5672;
     const char* vhost = "/";
     const amqp_channel_t channel = 1;
@@ -348,19 +353,26 @@ int parser(int client, const char* method, http_request_t* request) {
     // 没有的内容应该会 strlen = 0, 使用前检查 len 即可
     request->authorization_len = strlen(authorization);
     request->authorization =
-        malloc(request->authorization_len * sizeof(char));
+        malloc((request->authorization_len + 1) * sizeof(char));
+    strncpy(request->authorization, authorization,
+            request->authorization_len + 1);
     request->content_type_len = strlen(content_type);
     request->content_type =
-        malloc(request->content_type_len * sizeof(char));
+        malloc((request->content_type_len + 1) * sizeof(char));
+    strncpy(request->content_type, content_type,
+            request->content_type_len + 1);
     request->file_path_len = strlen(file_path);
     request->file_path =
-        malloc(request->file_path_len * sizeof(char));
+        malloc((request->file_path_len + 1) * sizeof(char));
+    strncpy(request->file_path, file_path,
+            request->file_path_len + 1);
     request->content.len = content_length;
-    request->content.bytes = malloc(content_length * sizeof(char));
+    request->content.bytes =
+        malloc((content_length + 1) * sizeof(char));
 
     if (strcasecmp(method, "POST") == 0 ||
         strcasecmp(method, "PUT") == 0) /*接收 POST 过来的数据*/
-        recv(client, &request->content, content_length, 0);
+        recv(client, request->content.bytes, content_length, 0);
     // TODO: 错误处理
 
     /* 正确，HTTP 状态码 200 */
@@ -464,6 +476,18 @@ void headers_204(int client, const char* filename) {
     strcpy(buf, "Access-Control-Allow-Origin: *\r\n");
     send(client, buf, strlen(buf), 0);
     strcpy(buf, "Access-Control-Max-Age: 43200\r\n");
+    send(client, buf, strlen(buf), 0);
+    strcpy(buf, "\r\n");
+    send(client, buf, strlen(buf), 0);
+}
+
+void headers_json(int client, long len) {
+    char buf[1024];
+    strcpy(buf, "Access-Control-Allow-Origin: *\r\n");
+    send(client, buf, strlen(buf), 0);
+    strcpy(buf, "Content-Type: application/json; charset=utf-8\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "Content-Length: %ld\r\n", len);
     send(client, buf, strlen(buf), 0);
     strcpy(buf, "\r\n");
     send(client, buf, strlen(buf), 0);
