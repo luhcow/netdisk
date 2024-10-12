@@ -1,5 +1,7 @@
 #include "blockq.h"
 
+#include <stdlib.h>
+
 BlockQ* blockq_create(BlockQ* blockq) {
     blockq->front = 0;
     blockq->size = 0;
@@ -11,12 +13,12 @@ BlockQ* blockq_create(BlockQ* blockq) {
     pthread_mutex_init(blockq->mutex, NULL);
     pthread_cond_init(blockq->not_empty, NULL);
     pthread_cond_init(blockq->not_full, NULL);
-    blockq->ops.destroy = blockq_destroy;
-    blockq->ops.empty = blockq_empty;
-    blockq->ops.full = blockq_full;
-    blockq->ops.peek = blockq_peek;
-    blockq->ops.pop = blockq_pop;
-    blockq->ops.push = blockq_push;
+    blockq->ops->destroy = blockq_destroy;
+    blockq->ops->empty = blockq_empty;
+    blockq->ops->full = blockq_full;
+    blockq->ops->peek = blockq_peek;
+    blockq->ops->pop = blockq_pop;
+    blockq->ops->push = blockq_push;
     return blockq;
 }
 void blockq_destroy(BlockQ* q) {

@@ -13,7 +13,7 @@ typedef struct BlockQ_t_ {
     pthread_mutex_t* mutex;
     pthread_cond_t* not_empty;
     pthread_cond_t* not_full;
-    struct queue_ops_t_ ops;
+    struct queue_ops_t_* ops;
 } BlockQ;
 
 struct queue_ops_t_ {
