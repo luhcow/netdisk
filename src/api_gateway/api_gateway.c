@@ -5,14 +5,38 @@
 
 #define SERVER_STRING "Server: netfile/0.1.0\r\n"
 
-void headers_json(int client, long len);
+_Thread_local amqp_connection_state_t conn;
+_Thread_local amqp_bytes_t reply_to;
+
+const char* hostname = "52.77.251.3";
+const int port = 5672;
+const char* vhost = "/netdisk/";
+const amqp_channel_t channel = 1;
+const char* exchange = "gateway";
+const char* exchange_type = "topic";
+
+int api_gateway_prework(void) {
+    // 建立连接
+    conn = rabbitmq_connect_server(hostname, port, vhost, channel);
+
+    // 声明队列
+    reply_to = rabbitmq_rpc_publisher_declare(conn, channel, exchange,
+                                              exchange_type);
+}
+int api_gateway_work(int client) {
+    return accept_request(client);
+}
+int api_gateway_endwork(void) {
+    // 断开连接
+    rabbitmq_close(conn, channel);
+}
 
 /**********************************************************************/
 /* A request has caused a call to accept() on the server port to
  * return.  Process the request appropriately.
  * Parameters: the socket connected to the client */
 /**********************************************************************/
-void accept_request(int client) {
+int accept_request(int client) {
     char buf[1024];
     char method[255];
     char url[255];
@@ -41,12 +65,12 @@ void accept_request(int client) {
         strcasecmp(method, "OPTIONS") != 0 &&
         strcasecmp(method, "PUT") != 0) {
         unimplemented(client);
-        return;
+        return -1;
     }
     // 处理OPTIONS
     if (strcasecmp(method, "OPTIONS") == 0) {
         headers_204(client, path);
-        return;
+        return 0;
     }
 
     /*读取 url 地址*/
@@ -145,44 +169,28 @@ void accept_request(int client) {
 
     /*断开与客户端的连接（HTTP 特点：无连接）*/
     close(client);
+    return 0;
 }
 
 // 把消息发送到 中间件 然后阻塞等待消息发过来
 // JSON 格式 但是发收都是整个字符串 gateway不解码
 http_content_t remote_procedure_call(const char* api,
                                      const http_request_t* message) {
-    // TODO 建立线程池后 到中间件的连接应该在线程建立时就做好
-    // 真正用的时候肯定是要分一个文件的
-    const char* hostname = "52.77.251.3";
-    const int port = 5672;
-    const char* vhost = "/";
-    const amqp_channel_t channel = 1;
-    // 建立连接
-    amqp_connection_state_t conn =
-            rabbitmq_connect_server(hostname, port, vhost, channel);
-
-    // 声明队列
-    const char* exchange = "gateway";
-    const char* exchange_type = "topic";
-    amqp_bytes_t reply_to = rabbitmq_rpc_publisher_declare(
-            conn, channel, exchange, exchange_type);
-
     char routing_key[strlen(api) + 1];
     strcpy(routing_key, api);
     char* temp;
     while ((temp = strchr(routing_key, '/')) != NULL)
         *temp = '.';
+
     amqp_bytes_t message_body;
     message_body.bytes = message->content.bytes;
     message_body.len = message->content.len;
+
     rabbitmq_rpc_publish(conn, channel, exchange, reply_to,
                          routing_key, message_body);
 
     amqp_bytes_t answer =
             rabbitmq_rpc_wait_answer(conn, channel, reply_to);
-
-    // 断开连接
-    rabbitmq_close(conn, channel);
 
     http_content_t body;
     body.bytes = malloc(answer.len * sizeof(char));
@@ -190,7 +198,6 @@ http_content_t remote_procedure_call(const char* api,
     strncpy(body.bytes, answer.bytes, body.len);
 
     amqp_bytes_free(answer);
-    amqp_bytes_free(reply_to);
 
     return body;
 }
@@ -604,41 +611,4 @@ void unimplemented(int client) {
     send(client, buf, strlen(buf), 0);
     sprintf(buf, "</BODY></HTML>\r\n");
     send(client, buf, strlen(buf), 0);
-}
-
-/**********************************************************************/
-
-int main(int argc, char* argv[]) {
-    int server_sock = -1;
-
-    unsigned short int port = 0;
-    if (argc != 1)
-        port = atoi(argv[1]);
-    int client_sock = -1;
-    struct sockaddr_in client_name;
-    int client_name_len = sizeof(client_name);
-    pthread_t newthread;
-
-    /*在对应端口建立 httpd 服务*/
-    server_sock = startup(&port);
-    printf("httpd running on port %d\n", port);
-
-    while (1) {
-        /*套接字收到客户端连接请求*/
-        client_sock =
-                accept(server_sock, (struct sockaddr*)&client_name,
-                       &client_name_len);
-        if (client_sock == -1)
-            error_die("accept");
-        /*派生新线程用 accept_request 函数处理新请求*/
-        /* accept_request(client_sock); */
-        if (pthread_create(&newthread, NULL,
-                           (void* (*)(void*))accept_request,
-                           client_sock) != 0)
-            perror("pthread_create");
-    }
-
-    close(server_sock);
-
-    return (0);
 }
