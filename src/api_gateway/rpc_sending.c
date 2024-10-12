@@ -1,8 +1,10 @@
 #include "rpc_sending.h"
 
 amqp_connection_state_t rabbitmq_connect_server(
-    const char *hostname, const int port, const char *vhost,
-    amqp_channel_t channel) {
+        const char *hostname,
+        const int port,
+        const char *vhost,
+        amqp_channel_t channel) {
     amqp_connection_state_t conn;
     conn = amqp_new_connection();
     amqp_socket_t *socket = NULL;
@@ -17,9 +19,9 @@ amqp_connection_state_t rabbitmq_connect_server(
     }
 
     die_on_amqp_error(
-        amqp_login(conn, vhost, 0, 131072, 0, AMQP_SASL_METHOD_PLAIN,
-                   "guest", "guest"),
-        "Logging in");
+            amqp_login(conn, vhost, 0, 131072, 0,
+                       AMQP_SASL_METHOD_PLAIN, "guest", "guest"),
+            "Logging in");
     amqp_channel_open(conn, channel);
     die_on_amqp_error(amqp_get_rpc_reply(conn), "Opening channel");
 
@@ -27,24 +29,26 @@ amqp_connection_state_t rabbitmq_connect_server(
 }
 
 amqp_bytes_t rabbitmq_rpc_publisher_declare(
-    amqp_connection_state_t conn, amqp_channel_t channel,
-    const char *exchange, const char *type) {
+        amqp_connection_state_t conn,
+        amqp_channel_t channel,
+        const char *exchange,
+        const char *type) {
     amqp_bytes_t reply_to_queue;
     if (type == NULL) {
         const char *type1 = "topic";
         type = type1;
     }
     amqp_exchange_declare_ok_t *r = amqp_exchange_declare(
-        conn, channel, amqp_cstring_bytes(exchange),
-        amqp_cstring_bytes(type), 0, 1, 0, 0, amqp_empty_table);
+            conn, channel, amqp_cstring_bytes(exchange),
+            amqp_cstring_bytes(type), 0, 1, 0, 0, amqp_empty_table);
     die_on_amqp_error(amqp_get_rpc_reply(conn), "Declaring exchange");
 
     // return amqp_empty_bytes;
     // create private reply_to queue
     {
         amqp_queue_declare_ok_t *r =
-            amqp_queue_declare(conn, channel, amqp_empty_bytes, 0, 0,
-                               1, 1, amqp_empty_table);
+                amqp_queue_declare(conn, channel, amqp_empty_bytes, 0,
+                                   0, 1, 1, amqp_empty_table);
         die_on_amqp_error(amqp_get_rpc_reply(conn),
                           "Declaring queue");
         reply_to_queue = amqp_bytes_malloc_dup(r->queue);
@@ -58,13 +62,14 @@ amqp_bytes_t rabbitmq_rpc_publisher_declare(
 }
 
 int rabbitmq_rpc_publish(amqp_connection_state_t conn,
-                         amqp_channel_t channel, const char *exchange,
+                         amqp_channel_t channel,
+                         const char *exchange,
                          amqp_bytes_t reply_to_queue,
                          const char *routing_key,
-                         const char *message_body) {
+                         amqp_bytes_t message_body) {
     /*
    send the message
-*/
+  */
 
     {
         /*
@@ -74,7 +79,8 @@ int rabbitmq_rpc_publish(amqp_connection_state_t conn,
         props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG |
                        AMQP_BASIC_DELIVERY_MODE_FLAG |
                        AMQP_BASIC_REPLY_TO_FLAG |
-                       AMQP_BASIC_CORRELATION_ID_FLAG;
+                       AMQP_BASIC_CORRELATION_ID_FLAG |
+                       AMQP_BASIC_HEADERS_FLAG;
         props.content_type = amqp_cstring_bytes("application/json");
         props.delivery_mode = 2; /* persistent delivery mode */
         props.reply_to = amqp_bytes_malloc_dup(reply_to_queue);
@@ -83,15 +89,15 @@ int rabbitmq_rpc_publish(amqp_connection_state_t conn,
             return 1;
         }
         props.correlation_id = amqp_cstring_bytes("1");
-
         /*
           publish
         */
-        die_on_error(amqp_basic_publish(
-                         conn, channel, amqp_cstring_bytes(exchange),
-                         amqp_cstring_bytes(routing_key), 0, 0,
-                         &props, amqp_cstring_bytes(message_body)),
-                     "Publishing");
+        die_on_error(
+                amqp_basic_publish(conn, channel,
+                                   amqp_cstring_bytes(exchange),
+                                   amqp_cstring_bytes(routing_key), 0,
+                                   0, &props, message_body),
+                "Publishing");
 
         amqp_bytes_free(props.reply_to);
     }
@@ -140,14 +146,14 @@ amqp_bytes_t rabbitmq_rpc_wait_answer(amqp_connection_state_t conn,
                 }
 
                 d = (amqp_basic_deliver_t *)
-                        frame.payload.method.decoded;
-                printf(
-                    "Delivery: %u exchange: %.*s "
-                    "routingkey: %.*s\n",
-                    (unsigned)d->delivery_tag, (int)d->exchange.len,
-                    (char *)d->exchange.bytes,
-                    (int)d->routing_key.len,
-                    (char *)d->routing_key.bytes);
+                            frame.payload.method.decoded;
+                printf("Delivery: %u exchange: %.*s "
+                       "routingkey: %.*s\n",
+                       (unsigned)d->delivery_tag,
+                       (int)d->exchange.len,
+                       (char *)d->exchange.bytes,
+                       (int)d->routing_key.len,
+                       (char *)d->routing_key.bytes);
 
                 result = amqp_simple_wait_frame(conn, &frame);
                 if (result < 0) {
@@ -159,7 +165,7 @@ amqp_bytes_t rabbitmq_rpc_wait_answer(amqp_connection_state_t conn,
                     abort();
                 }
                 p = (amqp_basic_properties_t *)
-                        frame.payload.properties.decoded;
+                            frame.payload.properties.decoded;
                 if (p->_flags & AMQP_BASIC_CONTENT_TYPE_FLAG) {
                     printf("Content-type: %.*s\n",
                            (int)p->content_type.len,
@@ -168,7 +174,7 @@ amqp_bytes_t rabbitmq_rpc_wait_answer(amqp_connection_state_t conn,
                 printf("----\n");
 
                 body_target =
-                    (size_t)frame.payload.properties.body_size;
+                        (size_t)frame.payload.properties.body_size;
                 body_received = 0;
 
                 while (body_received < body_target) {
@@ -201,7 +207,7 @@ amqp_bytes_t rabbitmq_rpc_wait_answer(amqp_connection_state_t conn,
                 /* everything was fine, we can quit now
                  * because we received the reply */
                 amqp_bytes_t answer = amqp_bytes_malloc_dup(
-                    frame.payload.body_fragment);
+                        frame.payload.body_fragment);
                 if (answer.bytes == NULL) {
                     fprintf(stderr,
                             "Out of memory while copying queue name");
@@ -220,8 +226,8 @@ amqp_bytes_t rabbitmq_rpc_wait_answer(amqp_connection_state_t conn,
 int rabbitmq_close(amqp_connection_state_t conn,
                    amqp_channel_t channel) {
     die_on_amqp_error(
-        amqp_channel_close(conn, channel, AMQP_REPLY_SUCCESS),
-        "Closing channel");
+            amqp_channel_close(conn, channel, AMQP_REPLY_SUCCESS),
+            "Closing channel");
     die_on_amqp_error(amqp_connection_close(conn, AMQP_REPLY_SUCCESS),
                       "Closing connection");
     die_on_error(amqp_destroy_connection(conn), "Ending connection");
