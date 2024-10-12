@@ -7,10 +7,10 @@ pthread_t pthreads[32];
 
 static void routine(void* pool_void) {
     BlockQ* pool = (BlockQ*)pool_void;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 2; i++) {
         pool->ops->push(pool, -1);
     }
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 2; i++) {
         pthread_join(pthreads[i], NULL);
     }
     return;
@@ -20,7 +20,7 @@ void* gateway_pool_build(void* pool_void) {
     BlockQ* pool = (BlockQ*)pool_void;
     blockq_create(pool);
     pthread_cleanup_push(routine, pool_void);
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 2; i++) {
         pthread_create(pthreads + i, NULL, consumer, pool_void);
     }
     while (sleep(100))
