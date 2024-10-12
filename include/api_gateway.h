@@ -34,35 +34,24 @@ typedef struct http_request_t_ {
     http_content_t content;
 } http_request_t;
 
-void accept_request(int);
-
-void bad_request(int);
-
-char* bad_json(const char*);
-
-void cat(int, FILE*);
-
-// void cannot_execute(int);
-
-void error_die(const char*);
-
-int parser(int, const char*, http_request_t*);
-
-http_content_t remote_procedure_call(const char*,
-                                     const http_request_t*);
-
-int get_line(int, char*, int);
-
-void headers(int, const char*, FILE* resource);
-
-void headers_204(int, const char*);
-
-void not_found(int);
-
-// void serve_file(int, const char*);
-
+int api_gateway_prework(void);
+int api_gateway_work(int);
+int api_gateway_endwork(void);
 int startup(unsigned short int*);
 
-void unimplemented(int);
+static int accept_request(int);
+static void bad_request(int);
+static char* bad_json(const char*);
+static void cat(int, FILE*);
+static void error_die(const char*);
+static int parser(int, const char*, http_request_t*);
+static http_content_t remote_procedure_call(const char*,
+                                            const http_request_t*);
+static int get_line(int, char*, int);
+static void headers(int, const char*, FILE* resource);
+static void headers_204(int, const char*);
+static void headers_json(int client, long len);
+static void not_found(int);
+static void unimplemented(int);
 
 #endif
