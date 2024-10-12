@@ -28,8 +28,8 @@ int main(int argc, char* argv[]) {
                 accept(server_sock, (struct sockaddr*)&client_name,
                        &client_name_len);
         if (client_sock == -1)
-            error_die("accept");
-        pool.ops.push(&pool, client_sock);
+            perror("accept");
+        pool.ops->push(&pool, client_sock);
     }
 
     // 线程池退出

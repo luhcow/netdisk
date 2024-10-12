@@ -8,7 +8,7 @@ pthread_t pthreads[32];
 static void routine(void* pool_void) {
     BlockQ* pool = (BlockQ*)pool_void;
     for (int i = 0; i < 5; i++) {
-        pool->ops.push(pool, -1);
+        pool->ops->push(pool, -1);
     }
     for (int i = 0; i < 5; i++) {
         pthread_join(pthreads[i], NULL);
@@ -21,7 +21,7 @@ void* gateway_pool_build(void* pool_void) {
     blockq_create(pool);
     pthread_cleanup_push(routine, pool_void);
     for (int i = 0; i < 5; i++) {
-        pthread_create(pthreads + i, NULL, consumer, pool);
+        pthread_create(pthreads + i, NULL, consumer, pool_void);
     }
     while (sleep(100))
         ;
@@ -30,16 +30,17 @@ void* gateway_pool_build(void* pool_void) {
     pthread_cleanup_pop(pool_void);
 }
 
-static void* consumer(BlockQ* task) {
+static void* consumer(void* pool_void) {
+    BlockQ* pool = (BlockQ*)pool_void;
     api_gateway_prework();
     for (;;) {
-        int num = task->ops.pop(task);
+        int num = pool->ops->pop(pool);
         if (num == -1) {
             printf("0x%lx get sign to exit, done\n", pthread_self());
-            return;
+            return NULL;
         }
-        api_gateway_work(task);
+        api_gateway_work(num);
     }
     api_gateway_endwork();
-    return;
+    return NULL;
 }

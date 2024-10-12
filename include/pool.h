@@ -5,4 +5,4 @@
 #include "blockq.h"
 
 void* gateway_pool_build(void* pool_void);
-static void* consumer(BlockQ* task);
+static void* consumer(void* task);
