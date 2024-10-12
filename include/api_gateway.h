@@ -48,7 +48,8 @@ void error_die(const char*);
 
 int parser(int, const char*, http_request_t*);
 
-http_content_t remote_procedure_call(const char*, http_request_t*);
+http_content_t remote_procedure_call(const char*,
+                                     const http_request_t*);
 
 int get_line(int, char*, int);
 
@@ -60,7 +61,7 @@ void not_found(int);
 
 // void serve_file(int, const char*);
 
-int startup(u_short*);
+int startup(unsigned short int*);
 
 void unimplemented(int);
 

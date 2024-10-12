@@ -9,12 +9,16 @@
 
 char username[] = "admin";
 char password[] =
-    "884c5d7f9de8d072f05636aab3af8e8c7ebe790f4b4f965561a3b847b39bfa24";
+        "884c5d7f9de8d072f05636aab3af8e8c7ebe790f4b4f965561a3b847b39b"
+        "fa24";
 time_t pwd_ts = 1725947910;
 // 数据库占位符
 
-int encode_jwt(struct json_object* jobj, char* jwt[], size_t* jwt_length,
-               char user_name[], time_t pwd_ts) {
+int encode_jwt(struct json_object* jobj,
+               char* jwt[],
+               size_t* jwt_length,
+               char user_name[],
+               time_t pwd_ts) {
     char pwd_ts_str[100];
     sprintf(pwd_ts_str, "%ld", pwd_ts);
 
@@ -39,12 +43,13 @@ int encode_jwt(struct json_object* jobj, char* jwt[], size_t* jwt_length,
     params.alg = L8W8JWT_ALG_HS256;
 
     params.iat = l8w8jwt_time(NULL);
-    params.exp =
-        l8w8jwt_time(NULL) +
-        259200; /* Set to expire after 10 minutes (600 seconds). 3days*/
+    params.exp = l8w8jwt_time(NULL) +
+                 259200; /* Set to expire after 10 minutes (600
+                            seconds). 3days*/
     params.nbf = params.iat;
 
-    params.secret_key = (unsigned char*)"iJOIIIJIhidsfioe7837483HUHUHUuhuh";
+    params.secret_key =
+            (unsigned char*)"iJOIIIJIhidsfioe7837483HUHUHUuhuh";
     params.secret_key_length = strlen(params.secret_key);
 
     params.out = jwt;
@@ -71,10 +76,10 @@ int main(void) {
     json_buffer[len] = '\0';
 
     struct json_object* jobj = json_tokener_parse(json_buffer);
-    char* user_name =
-        json_object_get_string(json_object_object_get(jobj, "username"));
-    char* pass_word =
-        json_object_get_string(json_object_object_get(jobj, "password"));
+    char* user_name = json_object_get_string(
+            json_object_object_get(jobj, "username"));
+    char* pass_word = json_object_get_string(
+            json_object_object_get(jobj, "password"));
 
     char* jwt;
     size_t jwt_length;
@@ -90,7 +95,8 @@ int main(void) {
             "{\"token\":\"%s\"}}",
             jwt);
 
-    // if (strcmp(user_name, username) == 0 && strcmp(password, password) == 0)
+    // if (strcmp(user_name, username) == 0 && strcmp(password,
+    // password) == 0)
     // {
     printf("Access-Control-Allow-Origin: *\r\n");
     printf("Content-Type: application/json; charset=utf-8\r\n");
@@ -99,8 +105,8 @@ int main(void) {
     fwrite(send_json, 1, strlen(send_json), stdout);
     // } else {
     //     printf("Access-Control-Allow-Origin: *\r\n");
-    //     printf("Content-Type: application/json; charset=utf-8\r\n");
-    //     printf("Content-Length: 58\r\n");
+    //     printf("Content-Type: application/json;
+    //     charset=utf-8\r\n"); printf("Content-Length: 58\r\n");
     //     printf("\r\n");
     //     printf("%s  %d\r\n", json_buffer, len);
     //     printf(

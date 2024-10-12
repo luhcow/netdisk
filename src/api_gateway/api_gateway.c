@@ -103,7 +103,7 @@ void accept_request(int client) {
                 // 注意上传也在这里 可能需要特殊处理一下 先按小文件
                 // 直接塞进消息里或者base64
                 readysend_mess =
-                    remote_procedure_call(fs_api, &request);
+                        remote_procedure_call(fs_api, &request);
             }
             headers_json(client, readysend_mess.len);
             send(client, readysend_mess.bytes, readysend_mess.len, 0);
@@ -114,7 +114,7 @@ void accept_request(int client) {
             // 但我直接
             // TODO
             readysend_mess =
-                remote_procedure_call(auth_api, &request);
+                    remote_procedure_call(auth_api, &request);
             headers_json(client, readysend_mess.len);
             send(client, readysend_mess.bytes, readysend_mess.len, 0);
         }
@@ -150,7 +150,7 @@ void accept_request(int client) {
 // 把消息发送到 中间件 然后阻塞等待消息发过来
 // JSON 格式 但是发收都是整个字符串 gateway不解码
 http_content_t remote_procedure_call(const char* api,
-                                     http_request_t* message) {
+                                     const http_request_t* message) {
     // TODO 建立线程池后 到中间件的连接应该在线程建立时就做好
     // 真正用的时候肯定是要分一个文件的
     const char* hostname = "52.77.251.3";
@@ -159,24 +159,27 @@ http_content_t remote_procedure_call(const char* api,
     const amqp_channel_t channel = 1;
     // 建立连接
     amqp_connection_state_t conn =
-        rabbitmq_connect_server(hostname, port, vhost, channel);
+            rabbitmq_connect_server(hostname, port, vhost, channel);
 
     // 声明队列
     const char* exchange = "gateway";
     const char* exchange_type = "topic";
     amqp_bytes_t reply_to = rabbitmq_rpc_publisher_declare(
-        conn, channel, exchange, exchange_type);
+            conn, channel, exchange, exchange_type);
 
     char routing_key[strlen(api) + 1];
     strcpy(routing_key, api);
     char* temp;
     while ((temp = strchr(routing_key, '/')) != NULL)
         *temp = '.';
+    amqp_bytes_t message_body;
+    message_body.bytes = message->content.bytes;
+    message_body.len = message->content.len;
     rabbitmq_rpc_publish(conn, channel, exchange, reply_to,
-                         routing_key, message->content.bytes);
+                         routing_key, message_body);
 
     amqp_bytes_t answer =
-        rabbitmq_rpc_wait_answer(conn, channel, reply_to);
+            rabbitmq_rpc_wait_answer(conn, channel, reply_to);
 
     // 断开连接
     rabbitmq_close(conn, channel);
@@ -262,12 +265,11 @@ char* bad_json(const char* mess) {
     return re_str;
 }
 
-/**********************************************************************/
-/* Execute a CGI script.  Will need to set environment variables as
- * appropriate.
- * Parameters: client socket descriptor
- *             path to the CGI script */
-/**********************************************************************/
+/// @brief 对 HTTP 的 头部进行解析，不包括起始行 (已经被解析)
+/// @param client 客户端的 socket 描述符
+/// @param method 请求方法
+/// @param request 解析出来的内容会存在这个结构体里
+/// @return 找不到 content-length 会返回 -1
 int parser(int client, const char* method, http_request_t* request) {
     char buf[1024];
     // int cgi_output[2];
@@ -353,22 +355,22 @@ int parser(int client, const char* method, http_request_t* request) {
     // 没有的内容应该会 strlen = 0, 使用前检查 len 即可
     request->authorization_len = strlen(authorization);
     request->authorization =
-        malloc((request->authorization_len + 1) * sizeof(char));
+            malloc((request->authorization_len + 1) * sizeof(char));
     strncpy(request->authorization, authorization,
             request->authorization_len + 1);
     request->content_type_len = strlen(content_type);
     request->content_type =
-        malloc((request->content_type_len + 1) * sizeof(char));
+            malloc((request->content_type_len + 1) * sizeof(char));
     strncpy(request->content_type, content_type,
             request->content_type_len + 1);
     request->file_path_len = strlen(file_path);
     request->file_path =
-        malloc((request->file_path_len + 1) * sizeof(char));
+            malloc((request->file_path_len + 1) * sizeof(char));
     strncpy(request->file_path, file_path,
             request->file_path_len + 1);
     request->content.len = content_length;
     request->content.bytes =
-        malloc((content_length + 1) * sizeof(char));
+            malloc((content_length + 1) * sizeof(char));
 
     if (strcasecmp(method, "POST") == 0 ||
         strcasecmp(method, "PUT") == 0) /*接收 POST 过来的数据*/
@@ -384,19 +386,17 @@ int parser(int client, const char* method, http_request_t* request) {
     return 1;
 }
 
-/**********************************************************************/
-/* Get a line from a socket, whether the line ends in a newline,
- * carriage return, or a CRLF combination.  Terminates the string read
- * with a null character.  If no newline indicator is found before the
- * end of the buffer, the string is terminated with a null.  If any of
- * the above three line terminators is read, the last character of the
- * string will be a linefeed and the string will be terminated with a
- * null character.
- * Parameters: the socket descriptor
- *             the buffer to save the data in
- *             the size of the buffer
- * Returns: the number of bytes stored (excluding null) */
-/**********************************************************************/
+/// @brief Get a line from a socket, whether the line ends in a
+/// newline, carriage return, or a CRLF combination.  Terminates the
+/// string read with a null character.  If no newline indicator is
+/// found before the end of the buffer, the string is terminated with
+/// a null.  If any of the above three line terminators is read, the
+/// last character of the string will be a linefeed and the string
+/// will be terminated with a null character.
+/// @param sock the socket descriptor
+/// @param buf the buffer to save the data in
+/// @param size the size of the buffer
+/// @return the number of bytes stored (excluding null)
 int get_line(int sock, char* buf, int size) {
     int i = 0;
     char c = '\0';
@@ -453,10 +453,10 @@ void headers(int client, const char* filename, FILE* resource) {
         fseek(resource, 0, SEEK_END);
         long file_size = ftell(resource);
         fseek(resource, 0, SEEK_SET);
-        sprintf(
-            buf,
-            "Content-Disposition: attachment; filename=\"%s\"\r\n",
-            filename);
+        sprintf(buf,
+                "Content-Disposition: attachment; "
+                "filename=\"%s\"\r\n",
+                filename);
         send(client, buf, strlen(buf), 0);
         sprintf(buf, "Content-Length: %ld\r\n", file_size);
         send(client, buf, strlen(buf), 0);
@@ -549,7 +549,7 @@ void not_found_debug(int client, const char* path) {
  * Parameters: pointer to variable containing the port to connect on
  * Returns: the socket */
 /**********************************************************************/
-int startup(u_short* port) {
+int startup(unsigned short int* port) {
     int httpd = 0;
     struct sockaddr_in name;
 
@@ -611,7 +611,7 @@ void unimplemented(int client) {
 int main(int argc, char* argv[]) {
     int server_sock = -1;
 
-    u_short port = 0;
+    unsigned short int port = 0;
     if (argc != 1)
         port = atoi(argv[1]);
     int client_sock = -1;
@@ -626,8 +626,8 @@ int main(int argc, char* argv[]) {
     while (1) {
         /*套接字收到客户端连接请求*/
         client_sock =
-            accept(server_sock, (struct sockaddr*)&client_name,
-                   &client_name_len);
+                accept(server_sock, (struct sockaddr*)&client_name,
+                       &client_name_len);
         if (client_sock == -1)
             error_die("accept");
         /*派生新线程用 accept_request 函数处理新请求*/
