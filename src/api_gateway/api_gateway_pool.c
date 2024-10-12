@@ -1,4 +1,5 @@
 #include <signal.h>
+#include <stdlib.h>
 
 #include "api_gateway.h"
 #include "pool.h"
@@ -9,10 +10,12 @@ pthread_t pool_thread;
 int server_sock = -1;
 
 void handler(int sign);
+void function(void);
 
 int main(int argc, char* argv[]) {
-    // 注册信号
+    // 注册
     signal(SIGINT, handler);
+    atexit(function);
 
     // 建线程池
     pthread_create(&pool_thread, NULL, gateway_pool_build, &pool);
@@ -46,7 +49,15 @@ int main(int argc, char* argv[]) {
     exit(0);
     return 0;
 }
+
 void handler(int sign) {
-    close(server_sock);
     exit(0);
+    return;
+}
+
+void function(void) {
+    close(server_sock);
+    pthread_cancel(pool_thread);
+    pthread_join(pool_thread, NULL);
+    return;
 }
