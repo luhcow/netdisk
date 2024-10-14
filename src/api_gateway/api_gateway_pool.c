@@ -51,13 +51,17 @@ int main(int argc, char* argv[]) {
 }
 
 void handler(int sign) {
+    perror("收到 Ctrl C，执行退出处理");
     exit(0);
     return;
 }
 
 void function(void) {
     close(server_sock);
+    perror("服务端口关闭");
     pthread_cancel(pool_thread);
+    perror("向线程池发送 cancel");
     pthread_join(pool_thread, NULL);
+    perror("线程池已取消");
     return;
 }

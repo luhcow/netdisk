@@ -13,12 +13,14 @@ BlockQ* blockq_create(BlockQ* blockq) {
     pthread_mutex_init(blockq->mutex, NULL);
     pthread_cond_init(blockq->not_empty, NULL);
     pthread_cond_init(blockq->not_full, NULL);
+    blockq->ops = malloc(sizeof(struct queue_ops_t_));
     blockq->ops->destroy = blockq_destroy;
     blockq->ops->empty = blockq_empty;
     blockq->ops->full = blockq_full;
     blockq->ops->peek = blockq_peek;
     blockq->ops->pop = blockq_pop;
     blockq->ops->push = blockq_push;
+    blockq->ops->num = blockq_num;
     return blockq;
 }
 void blockq_destroy(BlockQ* q) {
@@ -29,6 +31,7 @@ void blockq_destroy(BlockQ* q) {
     free(q->mutex);
     free(q->not_empty);
     free(q->not_full);
+    free(q->ops);
     free(q);
     return;
 }
@@ -44,6 +47,12 @@ bool blockq_full(BlockQ* q) {
     int size = q->size;
     pthread_mutex_unlock(q->mutex);
     return size == N;
+}
+int blockq_num(BlockQ* q) {
+    pthread_mutex_lock(q->mutex);
+    int size = q->size;
+    pthread_mutex_unlock(q->mutex);
+    return size;
 }
 int blockq_push(BlockQ* q, int val) {
     pthread_mutex_lock(q->mutex);

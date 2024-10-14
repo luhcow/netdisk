@@ -23,6 +23,7 @@ struct queue_ops_t_ {
     void (*destroy)(BlockQ* q);
     bool (*empty)(BlockQ* q);
     bool (*full)(BlockQ* q);
+    int (*num)(BlockQ* q);
 };
 
 BlockQ* blockq_create(BlockQ* blockq);
@@ -30,6 +31,7 @@ void blockq_destroy(BlockQ* q);
 
 bool blockq_empty(BlockQ* q);
 bool blockq_full(BlockQ* q);
+int blockq_num(BlockQ* q);
 int blockq_push(BlockQ* q, int val);
 int blockq_pop(BlockQ* q);
 int blockq_peek(BlockQ* q);
