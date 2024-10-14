@@ -1,0 +1,9 @@
+{
+    "rabbitmq_hostname": "52.77.251.3",
+    "rabbitmq_port": 5672,
+    "rabbitmq_vhost": "/",
+    "rabbitmq_channel": 1,
+    "rabbitmq_exchange": "gateway",
+    "rabbitmq_exchange_type": "topic",
+    "gateway_port": 80
+}

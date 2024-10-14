@@ -1,9 +1,7 @@
 #include "rpc_sending.h"
 
 amqp_connection_state_t rabbitmq_connect_server(
-        const char *hostname,
-        const int port,
-        const char *vhost,
+        const char *hostname, const int port, const char *vhost,
         amqp_channel_t channel) {
     amqp_connection_state_t conn;
     conn = amqp_new_connection();
@@ -29,10 +27,8 @@ amqp_connection_state_t rabbitmq_connect_server(
 }
 
 amqp_bytes_t rabbitmq_rpc_publisher_declare(
-        amqp_connection_state_t conn,
-        amqp_channel_t channel,
-        const char *exchange,
-        const char *type) {
+        amqp_connection_state_t conn, amqp_channel_t channel,
+        const char *exchange, const char *type) {
     amqp_bytes_t reply_to_queue;
     if (type == NULL) {
         const char *type1 = "topic";
@@ -62,19 +58,18 @@ amqp_bytes_t rabbitmq_rpc_publisher_declare(
 }
 
 int rabbitmq_rpc_publish(amqp_connection_state_t conn,
-                         amqp_channel_t channel,
-                         const char *exchange,
+                         amqp_channel_t channel, const char *exchange,
                          amqp_bytes_t reply_to_queue,
                          const char *routing_key,
                          amqp_bytes_t message_body) {
     /*
-   send the message
-  */
+send the message
+*/
 
     {
         /*
-          set properties
-        */
+  set properties
+*/
         amqp_basic_properties_t props;
         props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG |
                        AMQP_BASIC_DELIVERY_MODE_FLAG |
@@ -90,8 +85,8 @@ int rabbitmq_rpc_publish(amqp_connection_state_t conn,
         }
         props.correlation_id = amqp_cstring_bytes("1");
         /*
-          publish
-        */
+  publish
+*/
         die_on_error(
                 amqp_basic_publish(conn, channel,
                                    amqp_cstring_bytes(exchange),
@@ -107,8 +102,8 @@ amqp_bytes_t rabbitmq_rpc_wait_answer(amqp_connection_state_t conn,
                                       amqp_channel_t channel,
                                       amqp_bytes_t reply_to_queue) {
     /*
-     wait an answer
-   */
+ wait an answer
+*/
 
     {
         amqp_basic_consume(conn, channel, reply_to_queue,

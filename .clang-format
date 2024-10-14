@@ -14,22 +14,22 @@ BasedOnStyle: Google
 IndentWidth: 4
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
-AllowShortLoopsOnASingleLine: false
+; AllowShortLoopsOnASingleLine: false
 # If the function declaration doesn’t fit on a line, allow putting all parameters of a function declaration onto the next line even if BinPackParameters is OnePerLine.
-AllowAllParametersOfDeclarationOnNextLine: false
+; AllowAllParametersOfDeclarationOnNextLine: false
 # 修改注释
-ReflowComments: true
-ReflowCommentsStyle: Always
+; ReflowComments: true
+; ReflowCommentsStyle: Always
 
 # AlwaysBreakAfterReturnType: None
 # AlignEscapedNewlinesLeft: true
-# 参数向左括号对齐
-AlignAfterOpenBracket: Align
+; # 参数向左括号对齐
+; AlignAfterOpenBracket: Align
 
 # 如果为假（false）， 函数调用的参数要么是在同一行上，要么将在同一行上有一行。
-BinPackArguments: true
-BinPackParameters: false
+; BinPackArguments: true
+; BinPackParameters: false
 # 如果为假（false）， 函数声明或函数定义的参数将都在同一行上，或各有一行。
-ColumnLimit: 70
+ColumnLimit: 80
 # 被放在新行的缩进
 ContinuationIndentWidth: 8
