@@ -8,27 +8,28 @@
 _Thread_local amqp_connection_state_t conn;
 _Thread_local amqp_bytes_t reply_to;
 
-const char* hostname = "52.77.251.3";
-const int port = 5672;
-const char* vhost = "/";
-const amqp_channel_t channel = 1;
-const char* exchange = "gateway";
-const char* exchange_type = "topic";
+const char* rabbitmq_hostname = "52.77.251.3";
+int rabbitmq_port = 5672;
+const char* rabbitmq_vhost = "/";
+amqp_channel_t rabbitmq_channel = 1;
+const char* rabbitmq_exchange = "gateway";
+const char* rabbitmq_exchange_type = "topic";
 
 int api_gateway_prework(void) {
     // 建立连接
-    conn = rabbitmq_connect_server(hostname, port, vhost, channel);
+    conn = rabbitmq_connect_server(rabbitmq_hostname, rabbitmq_port,
+                                   rabbitmq_vhost, rabbitmq_channel);
 
     // 声明队列
-    reply_to = rabbitmq_rpc_publisher_declare(conn, channel, exchange,
-                                              exchange_type);
+    reply_to = rabbitmq_rpc_publisher_declare(
+            conn, rabbitmq_channel, rabbitmq_exchange, rabbitmq_exchange_type);
 }
 int api_gateway_work(int client) {
     return accept_request(client);
 }
 int api_gateway_endwork(void) {
     // 断开连接
-    rabbitmq_close(conn, channel);
+    rabbitmq_close(conn, rabbitmq_channel);
 }
 
 /**********************************************************************/
@@ -60,10 +61,8 @@ int accept_request(int client) {
     // 这里增加了 PUT 方法，显得有点笨笨的，实际上 POST 带
     // multipart/form-data 主体可以增加很多数据 不过 PUT
     // 方法也有自己的优势
-    if (strcasecmp(method, "GET") != 0 &&
-        strcasecmp(method, "POST") != 0 &&
-        strcasecmp(method, "OPTIONS") != 0 &&
-        strcasecmp(method, "PUT") != 0) {
+    if (strcasecmp(method, "GET") != 0 && strcasecmp(method, "POST") != 0 &&
+        strcasecmp(method, "OPTIONS") != 0 && strcasecmp(method, "PUT") != 0) {
         unimplemented(client);
         return -1;
     }
@@ -75,10 +74,8 @@ int accept_request(int client) {
 
     /*读取 url 地址*/
     i = 0;
-    while (ISspace(buf[j]) && (j < sizeof(buf)))
-        j++;
-    while (!ISspace(buf[j]) && (i < sizeof(url) - 1) &&
-           (j < sizeof(buf))) {
+    while (ISspace(buf[j]) && (j < sizeof(buf))) j++;
+    while (!ISspace(buf[j]) && (i < sizeof(url) - 1) && (j < sizeof(buf))) {
         /*存下 url */
         url[i] = buf[j];
         i++;
@@ -126,8 +123,7 @@ int accept_request(int client) {
                 // 核验一下 token 合法了，愉快开跑
                 // 注意上传也在这里 可能需要特殊处理一下 先按小文件
                 // 直接塞进消息里或者base64
-                readysend_mess =
-                        remote_procedure_call(fs_api, &request);
+                readysend_mess = remote_procedure_call(fs_api, &request);
             }
             headers_json(client, readysend_mess.len);
             send(client, readysend_mess.bytes, readysend_mess.len,
@@ -138,8 +134,7 @@ int accept_request(int client) {
             // 先简单分成三类 login admin sign
             // 但我直接
             // TODO
-            readysend_mess =
-                    remote_procedure_call(auth_api, &request);
+            readysend_mess = remote_procedure_call(auth_api, &request);
             headers_json(client, readysend_mess.len);
             send(client, readysend_mess.bytes, readysend_mess.len,
                  MSG_NOSIGNAL);
@@ -150,8 +145,7 @@ int accept_request(int client) {
         // 先验证 Token 是否合法，RPC 后将新的请求链接发至客户端
         char* d_api = url + 1;
         // TODO 检查一下请求是否合法
-        if (request.authorization_len == 0 ||
-            request.authorization == NULL) {
+        if (request.authorization_len == 0 || request.authorization == NULL) {
             readysend_mess.bytes = bad_json("need login");
             readysend_mess.len = strlen(readysend_mess.bytes);
         } else if (!decode_jwt(request.authorization, NULL, 0)) {
@@ -163,8 +157,7 @@ int accept_request(int client) {
         }
         // 这里发的是去哪里下载的 JSON, 上传也可以这么做
         headers_json(client, readysend_mess.len);
-        send(client, readysend_mess.bytes, readysend_mess.len,
-             MSG_NOSIGNAL);
+        send(client, readysend_mess.bytes, readysend_mess.len, MSG_NOSIGNAL);
     } else {
         // 啥也不是, 发个 404
         not_found(client);
@@ -175,25 +168,27 @@ int accept_request(int client) {
     return 0;
 }
 
-// 把消息发送到 中间件 然后阻塞等待消息发过来
-// JSON 格式 但是发收都是整个字符串 gateway不解码
+/// @brief 把消息发送到 中间件 然后阻塞等待消息发过来 JSON 格式
+/// 但是发收都是整个字符串 gateway不解码
+/// @param api Url 去除了前面的部分 eg: fs/move 将会在函数内部变为 fs.move
+/// @param message parser 的返回值 包括 HTTP 请求消息主体和 有用的标头
+/// @return http 响应消息主体和长度
 http_content_t remote_procedure_call(const char* api,
                                      const http_request_t* message) {
     char routing_key[strlen(api) + 1];
     strcpy(routing_key, api);
     char* temp;
-    while ((temp = strchr(routing_key, '/')) != NULL)
-        *temp = '.';
+    while ((temp = strchr(routing_key, '/')) != NULL) *temp = '.';
 
     amqp_bytes_t message_body;
     message_body.bytes = message->content.bytes;
     message_body.len = message->content.len;
 
-    rabbitmq_rpc_publish(conn, channel, exchange, reply_to,
+    rabbitmq_rpc_publish(conn, rabbitmq_channel, rabbitmq_exchange, reply_to,
                          routing_key, message_body);
 
     amqp_bytes_t answer =
-            rabbitmq_rpc_wait_answer(conn, channel, reply_to);
+            rabbitmq_rpc_wait_answer(conn, rabbitmq_channel, reply_to);
 
     http_content_t body;
     body.bytes = malloc(answer.len * sizeof(char));
@@ -236,8 +231,7 @@ void cat(int client, FILE* resource) {
     int n = 0;
     char buffer[1024];
     size_t bytes_read;
-    while ((bytes_read = fread(buffer, 1, sizeof(buffer), resource)) >
-           0) {
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), resource)) > 0) {
         n++;
         send(client, buffer, bytes_read, MSG_NOSIGNAL);
     }
@@ -256,8 +250,8 @@ void error_die(const char* sc) {
 
 char* bad_json(const char* mess) {
     char error_token[60];
-    sprintf(error_token,
-            "{\"code\":401,\"message\":\"%s\",\"data\":null}", mess);
+    sprintf(error_token, "{\"code\":401,\"message\":\"%s\",\"data\":null}",
+            mess);
 
     // printf("Access-Control-Allow-Origin: *\r\n");
     // printf("Content-Type: application/json; charset=utf-8\r\n");
@@ -301,8 +295,7 @@ int parser(int client, const char* method, http_request_t* request) {
             /* read & discard headers */
             char* str = NULL;
             if ((str = strstr(buf, "Authorization:")) != NULL) {
-                strcpy(authorization,
-                       str + strlen("Authorization: "));
+                strcpy(authorization, str + strlen("Authorization: "));
             }
             numchars = get_line(client, buf, sizeof(buf));
         }
@@ -313,8 +306,7 @@ int parser(int client, const char* method, http_request_t* request) {
         numchars = get_line(client, buf, sizeof(buf));
         while ((numchars > 0) && strcmp("\n", buf)) {
             if ((str = strstr(buf, "Authorization:")) != NULL) {
-                strcpy(authorization,
-                       str + strlen("Authorization: "));
+                strcpy(authorization, str + strlen("Authorization: "));
             }
             /*利用 \0 进行分隔 */
             buf[15] = '\0';
@@ -336,8 +328,7 @@ int parser(int client, const char* method, http_request_t* request) {
         numchars = get_line(client, buf, sizeof(buf));
         while ((numchars > 0) && strcmp("\n", buf)) {
             if ((str = strstr(buf, "Authorization:")) != NULL) {
-                strcpy(authorization,
-                       str + strlen("Authorization: "));
+                strcpy(authorization, str + strlen("Authorization: "));
             }
             if ((str = strstr(buf, "Content-Type:")) != NULL) {
                 strcpy(content_type, str + strlen("content-type: "));
@@ -371,21 +362,16 @@ int parser(int client, const char* method, http_request_t* request) {
     request->content_type_len = strlen(content_type);
     request->content_type =
             malloc((request->content_type_len + 1) * sizeof(char));
-    strncpy(request->content_type, content_type,
-            request->content_type_len + 1);
+    strncpy(request->content_type, content_type, request->content_type_len + 1);
     request->file_path_len = strlen(file_path);
-    request->file_path =
-            malloc((request->file_path_len + 1) * sizeof(char));
-    strncpy(request->file_path, file_path,
-            request->file_path_len + 1);
+    request->file_path = malloc((request->file_path_len + 1) * sizeof(char));
+    strncpy(request->file_path, file_path, request->file_path_len + 1);
     request->content.len = content_length;
-    request->content.bytes =
-            malloc((content_length + 1) * sizeof(char));
+    request->content.bytes = malloc((content_length + 1) * sizeof(char));
 
     if (strcasecmp(method, "POST") == 0 ||
         strcasecmp(method, "PUT") == 0) /*接收 POST 过来的数据*/
-        recv(client, request->content.bytes, content_length,
-             MSG_WAITALL);
+        recv(client, request->content.bytes, content_length, MSG_WAITALL);
     // TODO: 错误处理
 
     /* 正确，HTTP 状态码 200 */
@@ -577,8 +563,7 @@ int startup(unsigned short int* port) {
     /*如果当前指定端口是 0，则动态随机分配一个端口*/
     if (*port == 0) {
         int namelen = sizeof(name);
-        if (getsockname(httpd, (struct sockaddr*)&name, &namelen) ==
-            -1)
+        if (getsockname(httpd, (struct sockaddr*)&name, &namelen) == -1)
             error_die("getsockname");
         *port = ntohs(name.sin_port);
     }

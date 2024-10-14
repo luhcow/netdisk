@@ -18,7 +18,8 @@ aux_source_directory(src/api_gateway API_GATEWAY_SRC)
 add_executable(api_gateway ${API_GATEWAY_SRC})
 #set_target_properties(api_gateway PROPERTIES
 #        RUNTIME_OUTPUT_DIRECTORY ../)
-target_link_libraries(api_gateway PRIVATE pthread l8w8jwt rabbitmq::rabbitmq)
+target_link_libraries(api_gateway PRIVATE pthread l8w8jwt rabbitmq::rabbitmq json-c)
+file(COPY conf/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/conf/)
 
 
 # # 编译 settings，输出到特定路径
