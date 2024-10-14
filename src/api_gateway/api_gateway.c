@@ -10,7 +10,7 @@ _Thread_local amqp_bytes_t reply_to;
 
 const char* hostname = "52.77.251.3";
 const int port = 5672;
-const char* vhost = "/netdisk/";
+const char* vhost = "/";
 const amqp_channel_t channel = 1;
 const char* exchange = "gateway";
 const char* exchange_type = "topic";
@@ -130,7 +130,8 @@ int accept_request(int client) {
                         remote_procedure_call(fs_api, &request);
             }
             headers_json(client, readysend_mess.len);
-            send(client, readysend_mess.bytes, readysend_mess.len, 0);
+            send(client, readysend_mess.bytes, readysend_mess.len,
+                 MSG_NOSIGNAL);
         } else if (strncasecmp("/auth", url + 4, 5) == 0) {
             char* auth_api = url + 4 + 1;
             // auth 有多种情况，需要分类一下
@@ -140,7 +141,8 @@ int accept_request(int client) {
             readysend_mess =
                     remote_procedure_call(auth_api, &request);
             headers_json(client, readysend_mess.len);
-            send(client, readysend_mess.bytes, readysend_mess.len, 0);
+            send(client, readysend_mess.bytes, readysend_mess.len,
+                 MSG_NOSIGNAL);
         }
     } else if (strncasecmp("/d", url, 2) == 0) {
         // TODO
@@ -161,7 +163,8 @@ int accept_request(int client) {
         }
         // 这里发的是去哪里下载的 JSON, 上传也可以这么做
         headers_json(client, readysend_mess.len);
-        send(client, readysend_mess.bytes, readysend_mess.len, 0);
+        send(client, readysend_mess.bytes, readysend_mess.len,
+             MSG_NOSIGNAL);
     } else {
         // 啥也不是, 发个 404
         not_found(client);
@@ -211,15 +214,15 @@ void bad_request(int client) {
 
     /*回应客户端错误的 HTTP 请求 */
     sprintf(buf, "HTTP/1.0 400 BAD REQUEST\r\n");
-    send(client, buf, sizeof(buf), 0);
+    send(client, buf, sizeof(buf), MSG_NOSIGNAL);
     sprintf(buf, "Content-type: text/html\r\n");
-    send(client, buf, sizeof(buf), 0);
+    send(client, buf, sizeof(buf), MSG_NOSIGNAL);
     sprintf(buf, "\r\n");
-    send(client, buf, sizeof(buf), 0);
+    send(client, buf, sizeof(buf), MSG_NOSIGNAL);
     sprintf(buf, "<P>Your browser sent a bad request, ");
-    send(client, buf, sizeof(buf), 0);
+    send(client, buf, sizeof(buf), MSG_NOSIGNAL);
     sprintf(buf, "such as a POST without a Content-Length.\r\n");
-    send(client, buf, sizeof(buf), 0);
+    send(client, buf, sizeof(buf), MSG_NOSIGNAL);
 }
 
 /**********************************************************************/
@@ -236,7 +239,7 @@ void cat(int client, FILE* resource) {
     while ((bytes_read = fread(buffer, 1, sizeof(buffer), resource)) >
            0) {
         n++;
-        send(client, buffer, bytes_read, 0);
+        send(client, buffer, bytes_read, MSG_NOSIGNAL);
     }
 }
 
@@ -256,16 +259,16 @@ char* bad_json(const char* mess) {
     sprintf(error_token,
             "{\"code\":401,\"message\":\"%s\",\"data\":null}", mess);
 
-    printf("Access-Control-Allow-Origin: *\r\n");
-    printf("Content-Type: application/json; charset=utf-8\r\n");
-    printf("Content-Length: %ld\r\n", strlen(error_token));
-    printf("\r\n");
+    // printf("Access-Control-Allow-Origin: *\r\n");
+    // printf("Content-Type: application/json; charset=utf-8\r\n");
+    // printf("Content-Length: %ld\r\n", strlen(error_token));
+    // printf("\r\n");
     char temp[255];
     sprintf(temp,
-            "%sAccess-Control-Allow-Origin: *\r\nContent-Type: "
+            "Access-Control-Allow-Origin: *\r\nContent-Type: "
             "application/json; charset=utf-8\r\nContent-Length: "
-            "%ld\r\n\r\n",
-            error_token, strlen(error_token));
+            "%ld\r\n\r\n%s",
+            strlen(error_token), error_token);
 
     char* re_str = malloc((strlen(temp) + 1) * sizeof(char));
     strncpy(re_str, temp, (strlen(temp) + 1));
@@ -381,14 +384,15 @@ int parser(int client, const char* method, http_request_t* request) {
 
     if (strcasecmp(method, "POST") == 0 ||
         strcasecmp(method, "PUT") == 0) /*接收 POST 过来的数据*/
-        recv(client, request->content.bytes, content_length, 0);
+        recv(client, request->content.bytes, content_length,
+             MSG_WAITALL);
     // TODO: 错误处理
 
     /* 正确，HTTP 状态码 200 */
     // 发送的请求正确就应该回复 200 OK 出现错误在 消息主体 中报告
     // 有助于对用户更加友好
     sprintf(buf, "HTTP/1.0 200 OK\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     // 目前错误处理只有在 content_length 找不到 return -1
     return 1;
 }
@@ -450,12 +454,12 @@ void headers(int client, const char* filename, FILE* resource) {
     strcpy(content_type, "application/octet-stream");
     /*正常的 HTTP header */
     strcpy(buf, "HTTP/1.0 200 OK\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     /*服务器信息*/
     strcpy(buf, SERVER_STRING);
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "Content-Type: %s\r\n", content_type);
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     if (strcmp(content_type, "text/html") != 0) {
         fseek(resource, 0, SEEK_END);
         long file_size = ftell(resource);
@@ -464,40 +468,40 @@ void headers(int client, const char* filename, FILE* resource) {
                 "Content-Disposition: attachment; "
                 "filename=\"%s\"\r\n",
                 filename);
-        send(client, buf, strlen(buf), 0);
+        send(client, buf, strlen(buf), MSG_NOSIGNAL);
         sprintf(buf, "Content-Length: %ld\r\n", file_size);
-        send(client, buf, strlen(buf), 0);
+        send(client, buf, strlen(buf), MSG_NOSIGNAL);
     }
     strcpy(buf, "\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
 }
 
 void headers_204(int client, const char* filename) {
     char buf[1024];
     strcpy(buf, "HTTP/1.0 204 No Content\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     strcpy(buf, "Access-Control-Allow-Headers: *\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     strcpy(buf, "Access-Control-Allow-Methods: *\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     strcpy(buf, "Access-Control-Allow-Origin: *\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     strcpy(buf, "Access-Control-Max-Age: 43200\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     strcpy(buf, "\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
 }
 
 void headers_json(int client, long len) {
     char buf[1024];
     strcpy(buf, "Access-Control-Allow-Origin: *\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     strcpy(buf, "Content-Type: application/json; charset=utf-8\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "Content-Length: %ld\r\n", len);
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     strcpy(buf, "\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
 }
 
 /**********************************************************************/
@@ -508,14 +512,14 @@ void not_found(int client) {
 
     /* 404 页面 */
     sprintf(buf, "HTTP/1.0 404 NOT FOUND\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     /*服务器信息*/
     sprintf(buf, SERVER_STRING);
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "Content-Type: text/html\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
 
     FILE* not_found_html = fopen("./htdocs/404.html", "r");
     cat(client, not_found_html);
@@ -527,25 +531,25 @@ void not_found_debug(int client, const char* path) {
 
     /* 404 页面 */
     sprintf(buf, "HTTP/1.0 404 NOT FOUND\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     /*服务器信息*/
     sprintf(buf, SERVER_STRING);
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "Content-Type: text/html\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "<HTML><TITLE>Not Found</TITLE>\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "<BODY><P>The server could not fulfill\r\n");
-    send(client, buf, strlen(buf), 0);
-    send(client, path, strlen(path), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
+    send(client, path, strlen(path), MSG_NOSIGNAL);
     sprintf(buf, "your request because the resource specified\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "is unavailable or nonexistent.\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "</BODY></HTML>\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
 }
 
 /**********************************************************************/
@@ -595,20 +599,20 @@ void unimplemented(int client) {
 
     /* HTTP method 不被支持*/
     sprintf(buf, "HTTP/1.0 501 Method Not Implemented\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     /*服务器信息*/
     sprintf(buf, SERVER_STRING);
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "Content-Type: text/html\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "<HTML><HEAD><TITLE>Method Not Implemented\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "</TITLE></HEAD>\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "<BODY><P>HTTP request method not supported.\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
     sprintf(buf, "</BODY></HTML>\r\n");
-    send(client, buf, strlen(buf), 0);
+    send(client, buf, strlen(buf), MSG_NOSIGNAL);
 }
