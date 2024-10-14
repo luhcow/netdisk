@@ -1,4 +1,6 @@
-// 请实现生产者消费者模型，完善下面程序：
+#ifndef ND_WD_API_POOL
+#define ND_WD_API_POOL
+
 #include <stdio.h>
 #include <unistd.h>
 
@@ -6,3 +8,4 @@
 
 void* gateway_pool_build(void* pool_void);
 static void* consumer(void* task);
+#endif

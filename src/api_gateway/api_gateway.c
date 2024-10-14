@@ -8,12 +8,12 @@
 _Thread_local amqp_connection_state_t conn;
 _Thread_local amqp_bytes_t reply_to;
 
-const char* rabbitmq_hostname = "52.77.251.3";
+char rabbitmq_hostname[16] = "52.77.251.3";
 int rabbitmq_port = 5672;
-const char* rabbitmq_vhost = "/";
+char rabbitmq_vhost[16] = "/";
 amqp_channel_t rabbitmq_channel = 1;
-const char* rabbitmq_exchange = "gateway";
-const char* rabbitmq_exchange_type = "topic";
+char rabbitmq_exchange[16] = "gateway";
+char rabbitmq_exchange_type[16] = "topic";
 
 int api_gateway_prework(void) {
     // 建立连接

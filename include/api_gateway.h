@@ -1,5 +1,5 @@
-#ifndef shs_api_gateway
-#define shs_api_gateway
+#ifndef ND_WD_API_GATEWAY
+#define ND_WD_API_GATEWAY
 
 #include <arpa/inet.h>
 #include <ctype.h>
@@ -45,8 +45,7 @@ static char* bad_json(const char*);
 static void cat(int, FILE*);
 static void error_die(const char*);
 static int parser(int, const char*, http_request_t*);
-static http_content_t remote_procedure_call(const char*,
-                                            const http_request_t*);
+static http_content_t remote_procedure_call(const char*, const http_request_t*);
 static int get_line(int, char*, int);
 static void headers(int, const char*, FILE* resource);
 static void headers_204(int, const char*);

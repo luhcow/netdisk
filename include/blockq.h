@@ -1,5 +1,5 @@
-#ifndef __shs_BLOCKQ_H
-#define __shs_BLOCKQ_H
+#ifndef ND_WD_BLOCKQ_H
+#define ND_WD_BLOCKQ_H
 
 #include <pthread.h>
 #include <stdbool.h>

@@ -1,3 +1,6 @@
+#ifndef ND_WD_AUTH
+#define ND_WD_AUTH
+
 #include <l8w8jwt/claim.h>
 #include <l8w8jwt/decode.h>
 #include <stdbool.h>
@@ -5,3 +8,4 @@
 
 bool decode_jwt(char JWT[], struct l8w8jwt_claim **out_claims,
                 int *out_calims_length);
+#endif
