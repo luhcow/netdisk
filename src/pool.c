@@ -1,50 +1,62 @@
-// 请实现生产者消费者模型，完善下面程序：
+
 #include "pool.h"
 
-#include "api_gateway.h"
-
-pthread_t pthreads[32];
-
-static void routine(void* pool_void) {
-    perror("线程池正在取消各个线程");
-    BlockQ* pool = (BlockQ*)pool_void;
-    fprintf(stderr, "wait %d task in queue\n", pool->ops->num(pool));
-    for (int i = 0; i < 2; i++) {
-        pool->ops->push(pool, -1);
+static void cancel(struct pool_t* pool) {
+    fprintf(stderr, "wait %d task in queue\n", pool->queue->ops->num(pool));
+    for (int i = 0; i < pool->thread_num; i++) {
+        pool->queue->ops->push(pool, -1);
     }
-    for (int i = 0; i < 2; i++) {
-        pthread_join(pthreads[i], NULL);
+    for (int i = 0; i < pool->thread_num; i++) {
+        pthread_join(pool->threads[i], NULL);
     }
     perror("各个线程已取消");
     return;
 }
 
-void* gateway_pool_build(void* pool_void) {
-    BlockQ* pool = (BlockQ*)pool_void;
-    blockq_create(pool);
-    pthread_cleanup_push(routine, pool_void);
-    for (int i = 0; i < 2; i++) {
-        pthread_create(pthreads + i, NULL, consumer, pool_void);
+static void cancel_noblock(struct pool_t* pool) {
+    fprintf(stderr, "wait %d task\n", pool->thread_num);
+    for (int i = 0; i < pool->thread_num; i++) {
+        pthread_cancel(pool->threads[i]);
     }
-    while (1)
-        sleep(100);
-    pthread_exit(NULL);
-    return NULL;
-    pthread_cleanup_pop(pool_void);
+    for (int i = 0; i < pool->thread_num; i++) {
+        pthread_join(pool->threads[i], NULL);
+    }
+    perror("各个线程已取消");
+    return;
 }
 
-static void* consumer(void* pool_void) {
-    BlockQ* pool = (BlockQ*)pool_void;
-    api_gateway_prework();
-    for (;;) {
-        int num = pool->ops->pop(pool);
-        if (num == -1) {
-            fprintf(stderr, "0x%lx get sign to exit, done\n",
-                    pthread_self());
-            return NULL;
-        }
-        api_gateway_work(num);
+int pool_build(struct pool_t* pool) {
+    blockq_create(pool->queue);
+    for (int i = 0; i < pool->thread_num; i++) {
+        pthread_create(pool->threads + i, NULL, pool->worker, pool);
     }
-    api_gateway_endwork();
-    return NULL;
+
+    return 0;
+}
+
+int pool_build_noblock(struct pool_t* pool) {
+    for (int i = 0; i < pool->thread_num; i++) {
+        pthread_create(pool->threads + i, NULL, pool->worker, pool);
+    }
+
+    return 0;
+}
+
+struct pool_t* pool_create(void* (*__start_routine)(void*), bool block,
+                           int num) {
+    struct pool_t* pool = malloc(sizeof(struct pool_t));
+    pool->thread_num = num;
+    pool->threads = malloc(num * sizeof(pthread_t));
+    pool->worker = __start_routine;
+    if (!block) {
+        pool->queue = NULL;
+        pool->build = pool_build_noblock;
+        pool->cancel = cancel_noblock;
+    } else {
+        pool->queue = NULL;
+        pool->build = pool_build;
+        pool->cancel = cancel;
+    }
+
+    return pool;
 }

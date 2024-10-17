@@ -16,6 +16,8 @@ extern amqp_channel_t rabbitmq_channel;
 extern char rabbitmq_exchange[16];
 extern char rabbitmq_exchange_type[16];
 
+char server_exipp[21];
+
 static void conf_read(void) {
     FILE *conf = fopen("api_gateway.json", "r");
     fseek(conf, 0, SEEK_END);

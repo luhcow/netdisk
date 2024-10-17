@@ -32,7 +32,7 @@ int get_line(int, char *, int);
 long headers(int, const char *);
 void not_found(int);
 void serve_file(int, const char *, const char *);
-int startup(u_short *);
+int startup(unsigned short int *);
 void unimplemented(int);
 
 /**********************************************************************/
@@ -309,7 +309,7 @@ void serve_file(int client, const char *filename, const char *method) {
  * Parameters: pointer to variable containing the port to connect on
  * Returns: the socket */
 /**********************************************************************/
-int startup(u_short *port) {
+int startup(unsigned short int *port) {
     int httpd = 0;
     struct sockaddr_in name;
 
@@ -370,7 +370,7 @@ void unimplemented(int client) {
 
 int main(void) {
     int server_sock = -1;
-    u_short port = 0;
+    unsigned short int port = 0;
     int client_sock = -1;
     struct sockaddr_in client_name;
     int client_name_len = sizeof(client_name);

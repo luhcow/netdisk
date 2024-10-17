@@ -22,8 +22,8 @@ unsigned short int port = 0;
 
 int server_sock = -1;
 
-void handler(int sign);
-void function(void);
+void capture_signal(int sign);
+void exit_processing(void);
 void conf_read(void);
 void* gateway_pool_build(void* pool_void);
 static void* consumer(void* task);
@@ -33,8 +33,8 @@ int main(int argc, char* argv[]) {
     //     // Error handling
     // }
     // 注册
-    signal(SIGINT, handler);
-    atexit(function);
+    signal(SIGINT, capture_signal);
+    atexit(exit_processing);
 
     // 建线程池
     pthread_create(&pool_thread, NULL, gateway_pool_build, &pool);
@@ -67,13 +67,13 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void handler(int sign) {
+void capture_signal(int sign) {
     perror("收到 Ctrl C，执行退出处理");
     exit(0);
     return;
 }
 
-void function(void) {
+void exit_processing(void) {
     close(server_sock);
     perror("服务端口关闭");
     pthread_cancel(pool_thread);

@@ -3,17 +3,12 @@
 #include <rabbitmq-c/amqp.h>
 #include <rabbitmq-c/tcp_socket.h>
 
+#include "handler.h"
+#include "rabbitma_p.h"
 #include "rpc_sending.h"
 
 _Thread_local amqp_connection_state_t conn;
 _Thread_local amqp_bytes_t reply_to;
-
-char rabbitmq_hostname[16] = "52.77.251.3";
-int rabbitmq_port = 5672;
-char rabbitmq_vhost[16] = "/";
-amqp_channel_t rabbitmq_channel = 1;
-char rabbitmq_exchange[16] = "gateway";
-char rabbitmq_exchange_type[16] = "topic";
 
 int listenbegin() {
     const char *hostname = rabbitmq_hostname;
@@ -67,6 +62,55 @@ int listenbegin() {
     amqp_basic_consume(conn, 1, queuename, amqp_empty_bytes, 0, 1, 0,
                        amqp_empty_table);
     die_on_amqp_error(amqp_get_rpc_reply(conn), "Consuming");
+}
+
+int rabbit_consumer(struct handler_map handler) {
+    amqp_rpc_reply_t res;
+    amqp_envelope_t envelope;
+
+    amqp_maybe_release_buffers(conn);
+
+    res = amqp_consume_message(conn, &envelope, NULL, 0);
+
+    if (AMQP_RESPONSE_NORMAL != res.reply_type) {
+        return -1;
+    }
+
+    printf("Delivery %u, exchange %.*s routingkey %.*s "
+           "correlation_id %.*s "
+           "consumer_tag %.*s"
+           "replyto %.*s\n",
+           (unsigned)envelope.delivery_tag, (int)envelope.exchange.len,
+           (char *)envelope.exchange.bytes, (int)envelope.routing_key.len,
+           (char *)envelope.routing_key.bytes,
+           (int)envelope.message.properties.correlation_id.len,
+           (char *)envelope.message.properties.correlation_id.bytes,
+           (int)envelope.consumer_tag.len, (char *)envelope.consumer_tag.bytes,
+           (int)envelope.message.properties.reply_to.len,
+           (char *)envelope.message.properties.reply_to.bytes);
+
+    if (envelope.message.properties._flags & AMQP_BASIC_CONTENT_TYPE_FLAG) {
+        printf("Content-type: %.*s\n",
+               (int)envelope.message.properties.content_type.len,
+               (char *)envelope.message.properties.content_type.bytes);
+    }
+    printf("----\n");
+
+    amqp_dump(envelope.message.body.bytes, envelope.message.body.len);
+    printf("working\n");
+
+    amqp_bytes_t send_body = handler_find(
+            &handler, envelope.routing_key.bytes)(envelope.message.body);
+    rabbit_publish(envelope.message.properties.reply_to, send_body,
+                   envelope.message.properties.correlation_id);
+
+    amqp_destroy_envelope(&envelope);
+
+    printf("done\n\n");
+
+    amqp_basic_ack(conn, 1, envelope.delivery_tag, 0);
+
+    return 0;
 }
 
 int rabbitmq_beginwork(void) {

@@ -1,4 +1,5 @@
 #include <json.h>
+#include <mysql/mysql.h>
 #include <pthread.h>
 #include <rabbitmq-c/amqp.h>
 #include <signal.h>
@@ -6,6 +7,7 @@
 #include <stdlib.h>
 
 #include "fs.h"
+#include "nd_mysql.h"
 #include "pool.h"
 
 pthread_t pool_thread;
@@ -17,61 +19,44 @@ extern amqp_channel_t rabbitmq_channel;
 extern char rabbitmq_exchange[16];
 extern char rabbitmq_exchange_type[16];
 
-void handler(int sign);
-void function(void);
+void capture_signal(int sign);
+void exit_processing(void);
 void conf_read(void);
-
-static void routine(void) {
-    rabbitmq_endwork();
-    mysql_endwork();
-    return;
-}
-
-int fs_run_(void) {
-    rabbitmq_beginwork();
-    mysql_beginwork();
-    fs_work();
-    pthread_cleanup_push(routine, NULL);
-    rabbitmq_endwork();
-    mysql_endwork();
-    pthread_exit(NULL);
-    return NULL;
-    pthread_cleanup_pop(NULL);
-}
-
-void *fs_run(void *arg) {
-    return fs_run_();
-}
 
 int main(int argc, char *argv[]) {
     // if (daemon(0, 0) == -1) {
     //     // Error handling
     // }
     // 注册
-    signal(SIGINT, handler);
-    atexit(function);
-
+    signal(SIGINT, capture_signal);
+    atexit(exit_processing);
+    if (mysql_library_init(0, NULL, NULL) != 0)  // 初始化mysql数据库
+    {
+        fprintf(stderr, "could not initialize MySQL client library\n");
+        exit(1);
+    }
     // 建线程池
-    pool_create(&pool_thread, NULL, fs_run, NULL);
-
+    struct pool_t *pool = pool_create(fs_run, false, 2);
+    pool->build(pool);
     // 线程池退出
-    pthread_cancel(pool_thread);
-    pthread_join(pool_thread, NULL);
+    pool->cancel(pool);
+
     exit(0);
     return 0;
 }
 
-void handler(int sign) {
+void capture_signal(int sign) {
     perror("收到 Ctrl C，执行退出处理");
     exit(0);
     return;
 }
 
-void function(void) {
+void exit_processing(void) {
     pthread_cancel(pool_thread);
     perror("向线程池发送 cancel");
     pthread_join(pool_thread, NULL);
     perror("线程池已取消");
+    mysql_library_end();
     return;
 }
 
