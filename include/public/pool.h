@@ -15,6 +15,6 @@ static struct pool_t {
     void (*cancel)(struct pool_t *pool);
     BlockQ *queue;
 };
-struct pool_t *pool_create(void *(*__start_routine)(void *), bool block,
+struct pool_t *pool_create(void *(*work_routine)(void *), bool block,
                            int num);
 #endif

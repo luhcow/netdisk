@@ -1,16 +1,19 @@
+#include "public/pool.h"
 
-#include "pool.h"
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 static void cancel(struct pool_t* pool) {
-    fprintf(stderr, "wait %d task in queue\n", pool->queue->ops->num(pool));
+    fprintf(stderr, "wait %d task in queue\n",
+            pool->queue->ops->num(pool->queue));
     for (int i = 0; i < pool->thread_num; i++) {
-        pool->queue->ops->push(pool, -1);
+        pool->queue->ops->push(pool->queue, -1);
     }
     for (int i = 0; i < pool->thread_num; i++) {
         pthread_join(pool->threads[i], NULL);
     }
     perror("各个线程已取消");
-    return;
 }
 
 static void cancel_noblock(struct pool_t* pool) {
@@ -22,7 +25,6 @@ static void cancel_noblock(struct pool_t* pool) {
         pthread_join(pool->threads[i], NULL);
     }
     perror("各个线程已取消");
-    return;
 }
 
 int pool_build(struct pool_t* pool) {
@@ -42,12 +44,12 @@ int pool_build_noblock(struct pool_t* pool) {
     return 0;
 }
 
-struct pool_t* pool_create(void* (*__start_routine)(void*), bool block,
+struct pool_t* pool_create(void* (*work_routine)(void*), bool block,
                            int num) {
     struct pool_t* pool = malloc(sizeof(struct pool_t));
     pool->thread_num = num;
     pool->threads = malloc(num * sizeof(pthread_t));
-    pool->worker = __start_routine;
+    pool->worker = work_routine;
     if (!block) {
         pool->queue = NULL;
         pool->build = pool_build_noblock;

@@ -1,9 +1,10 @@
 #include <pthread.h>
 #include <rabbitmq-c/amqp.h>
 
-#include "fs_handler.h"
-#include "handler.h"
-#include "rabbitmq_p.h"
+#include "fs/fs_handler.h"
+#include "public/handler.h"
+#include "public/nd_mysql.h"
+#include "public/rabbitmq_p.h"
 
 struct handler_map fs_handler;
 
@@ -19,7 +20,7 @@ static void thread_cleaning(void) {
 }
 
 static int fs_run_(void) {
-    fs_hanlder_init(&fs_handler);
+    fs_handler_init(&fs_handler);
     // TODO rabbit end 等待重写
     listenbegin();
     mysql_beginwork();

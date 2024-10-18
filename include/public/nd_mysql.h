@@ -7,7 +7,7 @@ const char *mysql_user = "admin";
 const char *mysql_passwd = "RuQ89syXgeMNQcFzMfZi";
 const char *mysql_db = "test";
 unsigned int mysql_port = 0;
-const char *mysql_unix_socket = NULL;
+const char *mysql_unix_socket;
 unsigned long mysql_clientflag = 0;
 
 int mysql_beginwork();

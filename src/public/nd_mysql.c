@@ -1,6 +1,7 @@
-#include "nd_mysql.h"
+#include "public/nd_mysql.h"
 
 #include <mysql/mysql.h>
+#include <stdio.h>
 
 _Thread_local MYSQL mysql;
 _Thread_local MYSQL *res;
@@ -27,8 +28,10 @@ int mysql_beginwork() {
         exit(1);
     }
     printf("connect success!\n");
+    return 0;
 }
 
 int mysql_endwork() {
     mysql_close(&mysql);
+    return 0;
 }

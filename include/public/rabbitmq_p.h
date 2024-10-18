@@ -4,8 +4,8 @@
 #include <rabbitmq-c/amqp.h>
 #include <rabbitmq-c/tcp_socket.h>
 
-#include "handler.h"
-#include "rpc_sending.h"
+#include "api_gateway/rpc_sending.h"
+#include "public/handler.h"
 
 char* rabbitmq_hostname = "52.77.251.3";
 int rabbitmq_port = 5672;

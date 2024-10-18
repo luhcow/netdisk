@@ -1,4 +1,14 @@
-#include "rpc_sending.h"
+#include "api_gateway/rpc_sending.h"
+
+#include <assert.h>
+#include <rabbitmq-c/tcp_socket.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "public/utils.h"
 
 amqp_connection_state_t rabbitmq_connect_server(
         const char *hostname, const int port, const char *vhost,

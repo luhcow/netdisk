@@ -1,6 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 
-#include "http.h"
+#include "public/http.h"
 
 #include <arpa/inet.h>
 #include <ctype.h>
@@ -18,24 +18,23 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "handler.h"
-#include "pool.h"
-#include "urlcode.h"
-#include "uthash.h"
+#include "public/handler.h"
+#include "public/pool.h"
+#include "public/urlcode.h"
+#include "public/uthash.h"
 
 // 全局结构体指针
 struct http_t_* http;
 
 // 函数声明
-int startup(unsigned short int* port);
-int listen_and_serve(const char* addr, int threads_num);
-int handle_func(const char* pattern, int (*handler)(int, request_t));
-void* worker(void*);
+static int startup(unsigned short int* port);
+static void* worker(void*);
 static void not_found(int client);
 static int accept_request(int client);
 static void* accept_thread_(void);
 static int parser(int client);
 static int get_line(int sock, char* buf, int size);
+static void http_exit_processing();
 
 // 静态函数实现
 
@@ -87,7 +86,9 @@ int startup(unsigned short int* port) {
 /// @param addr 地址
 /// @param threads_num 线程数
 /// @return 0 表示成功，-1 表示失败
-int listen_and_serve(const char* addr, int threads_num) {
+int listen_and_serve(const char* addr, int threads_num,
+                     int (*begin)(), int (*end)()) {
+    atexit(http_exit_processing);
     http = malloc(sizeof(struct http_t_));
     if (http == NULL) {
         perror("malloc");
@@ -118,6 +119,9 @@ int listen_and_serve(const char* addr, int threads_num) {
     }
 
     fprintf(stderr, "httpd running on port %d\n", http->server.port);
+
+    http->begin = begin;
+    http->end = end;
 
     struct pool_t* pool = pool_create(worker, true, threads_num);
     if (pool == NULL) {
@@ -154,8 +158,6 @@ void* accept_thread_(void) {
             perror("accept");
         http->pool->queue->ops->push(http->pool->queue, client_sock);
     }
-
-    exit(1);
 }
 
 /// @brief 处理 HTTP 请求
@@ -163,7 +165,7 @@ void* accept_thread_(void) {
 /// @param handler 处理函数
 /// @return 函数返回时必定成功
 int handle_func(const char* pattern, int (*handler)(int, request_t)) {
-    ihandler_add(http->server.handler, pattern, handler);
+    handler_add(http->server.handler, pattern, handler);
 
     return 0;
 }
@@ -196,7 +198,7 @@ static void not_found(int client) {
     }
 
     int not_found_html = open("./html/404.html", O_RDONLY);
-    if (not_found_html == NULL) {
+    if (not_found_html <= 0) {
         perror("fopen");
         return;
     }
@@ -225,7 +227,7 @@ static int accept_request(int client) {
     size_t i = 0, j = 0;
 
     // 解析 HTTP 方法
-    while (!ISspace(buf[j]) && (i < sizeof(method) - 1)) {
+    while (!isspace(buf[j]) && (i < sizeof(method) - 1)) {
         method[i++] = buf[j++];
     }
     method[i] = '\0';
@@ -238,8 +240,8 @@ static int accept_request(int client) {
 
     // 解析 URL
     i = 0;
-    while (ISspace(buf[j]) && (j < sizeof(buf))) j++;
-    while (!ISspace(buf[j]) && (i < sizeof(url) - 1) &&
+    while (isspace(buf[j]) && (j < sizeof(buf))) j++;
+    while (!isspace(buf[j]) && (i < sizeof(url) - 1) &&
            (j < sizeof(buf))) {
         url[i++] = buf[j++];
     }
@@ -381,15 +383,28 @@ static int get_line(int sock, char* buf, int size) {
 /// @brief 线程工作函数
 /// @return NULL
 void* worker(void*) {
+    if (http->begin != NULL) {
+        http->begin();
+    }
     for (;;) {
         int client = http->pool->queue->ops->pop(http->pool->queue);
         if (client == -1) {
-            continue;
+            break;
         }
         if (accept_request(client) == -1) {
             fprintf(stderr, "Error handling request\n");
         }
         close(client);
     }
+    if(http->end!=NULL) {
+        http->end();
+    }
     return NULL;
+}
+
+void http_exit_processing() {
+    pthread_cancel(http->server.accept_thread);
+    pthread_join(http->server.accept_thread,NULL);
+    http->pool->cancel(http->pool);
+    close(http->server.server_sock);
 }

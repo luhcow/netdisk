@@ -1,10 +1,10 @@
-#include "rabbitmq_p.h"
+#include "../../include/public/rabbitmq_p.h"
 
-#include <rabbitmq-c/amqp.h>
-#include <rabbitmq-c/tcp_socket.h>
+#include <../../lib/rabbitmq-c/include/rabbitmq-c/amqp.h>
+#include <../../lib/rabbitmq-c/include/rabbitmq-c/tcp_socket.h>
 
-#include "handler.h"
-#include "rpc_sending.h"
+#include "../../include/api_gateway/rpc_sending.h"
+#include "../../include/public/handler.h"
 
 _Thread_local amqp_connection_state_t conn;
 _Thread_local amqp_bytes_t reply_to;
@@ -31,9 +31,10 @@ int listenbegin() {
         die("opening TCP socket");
     }
 
-    die_on_amqp_error(amqp_login(conn, "/", 0, 131072, 0,
-                                 AMQP_SASL_METHOD_PLAIN, "guest", "guest"),
-                      "Logging in");
+    die_on_amqp_error(
+            amqp_login(conn, "/", 0, 131072, 0,
+                       AMQP_SASL_METHOD_PLAIN, "guest", "guest"),
+            "Logging in");
     amqp_channel_open(conn, 1);
     die_on_amqp_error(amqp_get_rpc_reply(conn), "Opening channel");
 
@@ -44,9 +45,11 @@ int listenbegin() {
     die_on_amqp_error(amqp_get_rpc_reply(conn), "Declaring exchange");
 
     {
-        amqp_queue_declare_ok_t *r = amqp_queue_declare(
-                conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
-        die_on_amqp_error(amqp_get_rpc_reply(conn), "Declaring queue");
+        amqp_queue_declare_ok_t *r =
+                amqp_queue_declare(conn, 1, amqp_empty_bytes, 0, 0, 0,
+                                   1, amqp_empty_table);
+        die_on_amqp_error(amqp_get_rpc_reply(conn),
+                          "Declaring queue");
         queuename = amqp_bytes_malloc_dup(r->queue);
         if (queuename.bytes == NULL) {
             fprintf(stderr, "Out of memory while copying queue name");
@@ -63,7 +66,7 @@ int listenbegin() {
     die_on_amqp_error(amqp_get_rpc_reply(conn), "Consuming");
 }
 
-int rabbit_consumer(struct handler_map handler) {
+int rabbit_consumer(struct handler_map *handler) {
     amqp_rpc_reply_t res;
     amqp_envelope_t envelope;
 
@@ -79,27 +82,34 @@ int rabbit_consumer(struct handler_map handler) {
            "correlation_id %.*s "
            "consumer_tag %.*s"
            "replyto %.*s\n",
-           (unsigned)envelope.delivery_tag, (int)envelope.exchange.len,
-           (char *)envelope.exchange.bytes, (int)envelope.routing_key.len,
+           (unsigned)envelope.delivery_tag,
+           (int)envelope.exchange.len,
+           (char *)envelope.exchange.bytes,
+           (int)envelope.routing_key.len,
            (char *)envelope.routing_key.bytes,
            (int)envelope.message.properties.correlation_id.len,
            (char *)envelope.message.properties.correlation_id.bytes,
-           (int)envelope.consumer_tag.len, (char *)envelope.consumer_tag.bytes,
+           (int)envelope.consumer_tag.len,
+           (char *)envelope.consumer_tag.bytes,
            (int)envelope.message.properties.reply_to.len,
            (char *)envelope.message.properties.reply_to.bytes);
 
-    if (envelope.message.properties._flags & AMQP_BASIC_CONTENT_TYPE_FLAG) {
+    if (envelope.message.properties._flags &
+        AMQP_BASIC_CONTENT_TYPE_FLAG) {
         printf("Content-type: %.*s\n",
                (int)envelope.message.properties.content_type.len,
-               (char *)envelope.message.properties.content_type.bytes);
+               (char *)envelope.message.properties.content_type
+                       .bytes);
     }
     printf("----\n");
 
     amqp_dump(envelope.message.body.bytes, envelope.message.body.len);
     printf("working\n");
 
-    amqp_bytes_t send_body = ((amqp_bytes_t(*)(amqp_bytes_t))handler_find(
-            &handler, envelope.routing_key.bytes))(envelope.message.body);
+    amqp_bytes_t send_body =
+            ((amqp_bytes_t(*)(amqp_bytes_t))handler_find(
+                    handler, envelope.routing_key.bytes))(
+                    envelope.message.body);
     rabbit_publish(envelope.message.properties.reply_to, send_body,
                    envelope.message.properties.correlation_id);
 
@@ -118,8 +128,9 @@ int rabbitmq_beginwork(void) {
                                    rabbitmq_vhost, rabbitmq_channel);
 
     // 声明队列
-    reply_to = rabbitmq_rpc_publisher_declare(
-            conn, rabbitmq_channel, rabbitmq_exchange, rabbitmq_exchange_type);
+    reply_to = rabbitmq_rpc_publisher_declare(conn, rabbitmq_channel,
+                                              rabbitmq_exchange,
+                                              rabbitmq_exchange_type);
 }
 // int api_gateway_work(int client) {
 //     return accept_request(client);
