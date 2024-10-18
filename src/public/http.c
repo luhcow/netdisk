@@ -33,6 +33,7 @@ int handle_func(const char* pattern, int (*handler)(int, request_t));
 void* worker(void*);
 static void not_found(int client);
 static int accept_request(int client);
+static void* accept_thread_(void);
 static int parser(int client);
 static int get_line(int sock, char* buf, int size);
 
@@ -135,7 +136,26 @@ int listen_and_serve(const char* addr, int threads_num) {
         return -1;
     };
 
+    pthread_create(&http->server.accept_thread, NULL, accept_thread_,
+                   NULL);
+
     return 0;
+}
+
+/// @brief 接收每个连接并发送到 worker
+/// @param  void
+/// @return 不会返回
+void* accept_thread_(void) {
+    while (1) {
+        // 套接字收到客户端连接请求
+        int client_sock =
+                accept(http->server.server_sock, NULL, NULL);
+        if (client_sock == -1)
+            perror("accept");
+        http->pool->queue->ops->push(http->pool->queue, client_sock);
+    }
+
+    exit(1);
 }
 
 /// @brief 处理 HTTP 请求
