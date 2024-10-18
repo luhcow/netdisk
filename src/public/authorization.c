@@ -1,4 +1,4 @@
-#include "authorization.h"
+#include "public/authorization.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -40,8 +40,8 @@ bool decode_jwt(char JWT[], struct l8w8jwt_claim **out_claims,
 
     size_t out_claims_length = 2;
     int decode_result =
-        l8w8jwt_decode(&params, &validation_result, out_claims,
-                       (size_t *)out_calims_length);
+            l8w8jwt_decode(&params, &validation_result, out_claims,
+                           (size_t *)out_calims_length);
 
     if (decode_result == L8W8JWT_SUCCESS &&
         validation_result == L8W8JWT_VALID) {

@@ -1,4 +1,4 @@
-#include "blockq.h"
+#include "public/blockq.h"
 
 #include <stdlib.h>
 

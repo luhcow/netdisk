@@ -9,10 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "fs.h"
-#include "nd_mysql.h"
-#include "pool.h"
-#include "rabbitmq_p.h"
+#include "fs/fs.h"
+#include "public/pool.h"
 
 struct pool_t* pool;
 
@@ -48,13 +46,11 @@ int main(int argc, char* argv[]) {
     while (1) sleep(100);
 
     exit(0);
-    return 0;
 }
 
 void capture_signal(int sign) {
     perror("收到 Ctrl C，执行退出处理");
     exit(0);
-    return;
 }
 
 void exit_processing(void) {

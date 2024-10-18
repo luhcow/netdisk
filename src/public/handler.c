@@ -1,8 +1,11 @@
-#include <handler.h>
-#include <rabbitmq-c/amqp.h>
-#include <uthash.h>
+#include "public/handler.h"
 
-void handler_add(struct handler_map* head, char* key, void* (*handler)(void*)) {
+#include <stdlib.h>
+
+#include "public/uthash.h"
+
+void handler_add(struct handler_map* head, const char* key,
+                 void* (*handler)(void*)) {
     struct handler_map* s;
 
     s = malloc(sizeof *s);
