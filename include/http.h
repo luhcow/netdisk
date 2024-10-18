@@ -1,13 +1,23 @@
 #ifndef ND_WD_HTTP
 #define ND_WD_HTTP
 
+#include "handler.h"
+
+struct str_map {
+    char* key;
+    char* value;
+    UT_hash_handle hh;
+};
 typedef struct request_t_ {
-    struct str_str_map* heads;
-    struct handler_map* handler;
+    struct str_map* heads;
+
     char* url;
     char* uri;
     char* uri_residue;
     char* method;
+    char* query;
+    char* body;
+    int content_length;
 } request_t;
 
 typedef struct server_t_ {
@@ -15,6 +25,7 @@ typedef struct server_t_ {
     char* port;
     int server_sock;
     pthread_t accept_thread;
+    struct handler_map* handler;
 } server_t;
 
 struct http_t_ {

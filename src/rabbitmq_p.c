@@ -4,7 +4,6 @@
 #include <rabbitmq-c/tcp_socket.h>
 
 #include "handler.h"
-#include "rabbitma_p.h"
 #include "rpc_sending.h"
 
 _Thread_local amqp_connection_state_t conn;
@@ -99,8 +98,8 @@ int rabbit_consumer(struct handler_map handler) {
     amqp_dump(envelope.message.body.bytes, envelope.message.body.len);
     printf("working\n");
 
-    amqp_bytes_t send_body = handler_find(
-            &handler, envelope.routing_key.bytes)(envelope.message.body);
+    amqp_bytes_t send_body = ((amqp_bytes_t(*)(amqp_bytes_t))handler_find(
+            &handler, envelope.routing_key.bytes))(envelope.message.body);
     rabbit_publish(envelope.message.properties.reply_to, send_body,
                    envelope.message.properties.correlation_id);
 

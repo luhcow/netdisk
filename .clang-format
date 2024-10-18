@@ -16,3 +16,5 @@ AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 # 被放在新行的缩进
 ContinuationIndentWidth: 8
+# 换行长度
+ColumnLimit: 70

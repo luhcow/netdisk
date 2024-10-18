@@ -1,7 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
 
-#include "http.h"
-
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <fcntl.h>
@@ -19,6 +17,7 @@
 #include <unistd.h>
 
 #include "handler.h"
+#include "http.h"
 #include "pool.h"
 #include "urlcode.h"
 #include "uthash.h"
